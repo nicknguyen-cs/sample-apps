@@ -14,7 +14,6 @@ p {
   font-weight: 400;
   line-height: 26px;
   /* letter-spacing: 0em; */
-  text-align: center;
   line-height: 185%;
 }
 
@@ -23,7 +22,6 @@ h4 {
   font-weight: 800;
   font-size: 22px;
   line-height: 135%;
-  text-align: center;
   letter-spacing: -0.00019em;
   color: #222222;
   order: 1;
