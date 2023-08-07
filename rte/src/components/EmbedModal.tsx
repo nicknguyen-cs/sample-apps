@@ -17,6 +17,7 @@ const EmbedModal = (props: any) => {
   const { rte, update, savedSelection, attrs } = props;
 
   useEffect(() => {
+    console.log(rte.selection.get());
     if (attrs) {
       attrs.url && setUrl(attrs.url);
       attrs.title && setTitle(attrs.title);
@@ -27,7 +28,6 @@ const EmbedModal = (props: any) => {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    console.log(url, title, width, height);
     //* Insert social-embed node with the url
     if (!update) {
       rte.insertNode(
@@ -46,6 +46,7 @@ const EmbedModal = (props: any) => {
         }
       );
     } else {
+      console.log("updating");
       rte.updateNode('embed',
         {
           url,
