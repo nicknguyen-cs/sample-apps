@@ -1,9 +1,11 @@
 import React from 'react';
 import { ActionTooltip, Icon, cbModal } from '@contentstack/venus-components';
 import EmbedModal from './EmbedModal';
+import DeleteModal from './DeleteModal';
 
-const SocialEmbed = (props: any) => {
+const Embed = (props: any) => {
     const { attributes, attrs, children } = props;
+    console.log("URL: " , attrs.url);
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
     const match = attrs.url.match(youtubeRegex);
     const url = `https://www.youtube.com/embed/${match[1]}`;
@@ -18,17 +20,33 @@ const SocialEmbed = (props: any) => {
                         action: () => {
                             cbModal({
                                 component: (props: any) => (
-                                    <EmbedModal savedSelection={savedSelection} rte={rte} update={true} {...props} />
+                                    <EmbedModal savedSelection={savedSelection} rte={rte} update={true} attrs={attrs} {...props} />
                                 ),
                                 modalProps: {
                                     shouldReturnFocusAfterClose: false,
                                 },
                             });
                         },
-                        label: <Icon icon="Update" size="mini" />,
+                        label: <Icon icon="EditTransparent" size="mini" />,
                         title: 'Update',
                     },
+                    {
+                        action: () => {
+                            cbModal({
+                                component: (props: any) => (
+                                    <DeleteModal savedSelection={savedSelection} rte={rte} update={true} {...props} />
+                                ),
+                                modalProps: {
+                                    shouldReturnFocusAfterClose: false,
+                                },
+                            });
+                        },
+                        label: <Icon icon="Trash" size="mini" />,
+                        title: 'Delete',
+                    },
+                    
                 ]}
+                right="0"
             >
                 <iframe
                     style={{ width: '100%', height: '250px' }}
@@ -43,4 +61,4 @@ const SocialEmbed = (props: any) => {
     );
 };
 
-export default SocialEmbed;
+export default Embed;

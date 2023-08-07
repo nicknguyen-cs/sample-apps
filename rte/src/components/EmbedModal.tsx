@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from "react";
+import React, { useState, Fragment, useEffect } from "react";
 import {
   Field,
   TextInput,
@@ -9,16 +9,26 @@ import {
   ModalFooter,
 } from "@contentstack/venus-components";
 
-const SocialEmbedModal = (props: any) => {
+const EmbedModal = (props: any) => {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
-  const { rte, update, savedSelection } = props;
+  const { rte, update, savedSelection, attrs } = props;
+
+  useEffect(() => {
+    if (attrs) {
+      attrs.url && setUrl(attrs.url);
+      attrs.title && setTitle(attrs.title);
+      attrs.width && setWidth(attrs.width);
+      attrs.height && setHeight(attrs.height);
+    }
+  }, [attrs]);
+
   const handleSubmit = (e: any) => {
     e.preventDefault();
+    console.log(url, title, width, height);
     //* Insert social-embed node with the url
-    console.log("Modal: ", savedSelection);
     if (!update) {
       rte.insertNode(
         {
@@ -36,16 +46,12 @@ const SocialEmbedModal = (props: any) => {
         }
       );
     } else {
-      rte.updateNode(
+      rte.updateNode('embed',
         {
-          type: "embed",
-          attrs: {
-            url,
-            title,
-            width,
-            height
-          },
-          children: [{ text: "" }],
+          url,
+          title,
+          width,
+          height
         },
         {
           at: savedSelection,
@@ -69,7 +75,7 @@ const SocialEmbedModal = (props: any) => {
               name="embeded_url"
               placeholder="Enter Embeded url"
               type="url"
-              value={url ? "" : url}
+              value={url}
               onChange={(e: any) => setUrl(e.target.value)}
             />
           </Field>
@@ -79,7 +85,7 @@ const SocialEmbedModal = (props: any) => {
               name="embeded_title"
               placeholder="Enter Title"
               type="text"
-              value={title ? "" : title}
+              value={title}
               onChange={(e: any) => setTitle(e.target.value)}
             />
           </Field>
@@ -89,7 +95,7 @@ const SocialEmbedModal = (props: any) => {
               name="embeded_width"
               placeholder="Enter Video Width"
               type="number"
-              value={width ? "" : width}
+              value={width}
               onChange={(e: any) => setWidth(e.target.value)}
             />
           </Field>
@@ -99,7 +105,7 @@ const SocialEmbedModal = (props: any) => {
               name="embeded_height"
               placeholder="Enter Video Height"
               type="number"
-              value={height ? "" : height}
+              value={height}
               onChange={(e: any) => setHeight(e.target.value)}
             />
           </Field>
@@ -111,7 +117,7 @@ const SocialEmbedModal = (props: any) => {
             Cancel
           </Button>
           <Button key="add" icon="CheckedWhite" onClick={handleSubmit}>
-            Add
+            Save
           </Button>
         </ButtonGroup>
       </ModalFooter>
@@ -119,4 +125,4 @@ const SocialEmbedModal = (props: any) => {
   );
 };
 
-export default SocialEmbedModal;
+export default EmbedModal;

@@ -1,10 +1,10 @@
 import React from "react";
 import ContentstackSDK from "@contentstack/app-sdk";
-import { cbModal } from "@contentstack/venus-components";
-import editIcon from "./public/edit.svg";
+import { Icon, cbModal } from "@contentstack/venus-components";
 import "./index.css";
 import Embed from "./components/embed";
 import EmbedModal from "./components/EmbedModal";
+import '@contentstack/venus-components/build/main.css'
 
 export default ContentstackSDK.init().then(async (sdk) => {
   const extensionObj = await sdk["location"];
@@ -14,7 +14,7 @@ export default ContentstackSDK.init().then(async (sdk) => {
 
   const RtePlugin = RTE("embed", () => ({
     title: "Embed",
-    icon: <img style={{ padding: "0 6px" }} src={editIcon} />,
+    icon: <Icon icon="Embed" size="small" />,
     render: Embed,
     display: ["toolbar"],
     elementType: ["void"],
