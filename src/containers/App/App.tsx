@@ -13,7 +13,8 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  * improving the page load time
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
-const EntrySidebarExtension = React.lazy(() => import("../SidebarWidget/EntrySidebar"));
+const SideBarDeepCloneExtension = React.lazy(() => import("../CustomFieldDeepClone/CustomField"));
+const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
 const AppConfigurationExtension = React.lazy(() => import("../ConfigScreen/AppConfiguration"));
 const AssetSidebarExtension = React.lazy(() => import("../AssetSidebarWidget/AssetSidebar"));
 const StackDashboardExtension = React.lazy(() => import("../DashboardWidget/StackDashboard"));
@@ -33,6 +34,16 @@ function App() {
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <CustomFieldExtension />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sidebar-extension-deep-clone"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <SideBarDeepCloneExtension />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }

@@ -5,12 +5,12 @@ import DeleteModal from './DeleteModal';
 
 const Embed = (props: any) => {
     const { attributes, attrs, children } = props;
-    console.log("URL: " , attrs.url);
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
     const match = attrs.url.match(youtubeRegex);
     const url = `https://www.youtube.com/embed/${match[1]}`;
     const savedSelection = props.rte.selection.get();
     const rte = props.rte;
+    console.log("embed: " ,url)
     return (
         <div {...attributes} style={{ width: '100%' }}>
             <ActionTooltip
@@ -21,10 +21,7 @@ const Embed = (props: any) => {
                             cbModal({
                                 component: (props: any) => (
                                     <EmbedModal savedSelection={savedSelection} rte={rte} update={true} attrs={attrs} {...props} />
-                                ),
-                                modalProps: {
-                                    shouldReturnFocusAfterClose: false,
-                                },
+                                )
                             });
                         },
                         label: <Icon icon="EditTransparent" size="mini" />,
@@ -35,10 +32,7 @@ const Embed = (props: any) => {
                             cbModal({
                                 component: (props: any) => (
                                     <DeleteModal savedSelection={savedSelection} rte={rte} update={true} {...props} />
-                                ),
-                                modalProps: {
-                                    shouldReturnFocusAfterClose: false,
-                                },
+                                )
                             });
                         },
                         label: <Icon icon="Trash" size="mini" />,

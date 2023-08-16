@@ -12,6 +12,9 @@ const DefaultPage = () => {
               <a href="/custom-field">Custom Field</a>
             </li>
             <li>
+              <a href="/custom-field-deep-clone">Custom Field</a>
+            </li>
+            <li>
               <a href="/entry-sidebar">Entry Sidebar</a>
             </li>
             <li>

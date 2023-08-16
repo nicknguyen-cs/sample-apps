@@ -10,6 +10,7 @@ export default ContentstackSDK.init().then(async (sdk) => {
   const extensionObj = await sdk["location"];
   const RTE = await extensionObj["RTEPlugin"];
 
+
   if (!RTE) return;
 
   const RtePlugin = RTE("embed", () => ({
@@ -20,7 +21,9 @@ export default ContentstackSDK.init().then(async (sdk) => {
     elementType: ["void"],
   }));
 
-  RtePlugin.on("exec", (rte) => {
+  RtePlugin.on("exec", (rte: any) => {
+    let config =rte.getFieldConfig();
+    console.log("****Config: ", config);
     const savedSelection = rte.selection.get();
     cbModal({
       component: (props: any) => (

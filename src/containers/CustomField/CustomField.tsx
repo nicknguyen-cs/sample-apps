@@ -46,6 +46,7 @@ const ExampleSelector = () => {
   // The component returns a JSX element with two Select inputs
   return (
     <div className="row">
+      <h2> Hello World! CBL Properties </h2>
       <div className="col-4">
         {/* This Select input lets the user select their audience */}
         <Select
@@ -76,10 +77,10 @@ const ExampleSelector = () => {
           value={null}
           options={options}
           placeholder="Select a Pokemon"
-          selectLabel="Example API Selection" 
-          onChange={function () {}}
-          maxMenuHeight={100}        
-          />
+          selectLabel="Example API Selection"
+          onChange={function () { }}
+          maxMenuHeight={100}
+        />
       </div>
     </div >
   );

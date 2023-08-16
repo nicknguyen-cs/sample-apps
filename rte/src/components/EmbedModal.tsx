@@ -14,6 +14,7 @@ const EmbedModal = (props: any) => {
   const [title, setTitle] = useState("");
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
+  const [responsive, setResponsive] = useState(false);
   const { rte, update, savedSelection, attrs } = props;
 
   useEffect(() => {
@@ -22,12 +23,13 @@ const EmbedModal = (props: any) => {
       attrs.title && setTitle(attrs.title);
       attrs.width && setWidth(attrs.width);
       attrs.height && setHeight(attrs.height);
+      attrs.responsive && setResponsive(attrs.responsive);
     }
   }, [attrs]);
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    console.log(url, title, width, height);
+    console.log(url, title, width, height,responsive);
     //* Insert social-embed node with the url
     if (!update) {
       rte.insertNode(
@@ -37,7 +39,8 @@ const EmbedModal = (props: any) => {
             url,
             title,
             width,
-            height
+            height,
+            responsive
           },
           children: [{ text: "" }],
         },
@@ -51,7 +54,8 @@ const EmbedModal = (props: any) => {
           url,
           title,
           width,
-          height
+          height,
+          responsive
         },
         {
           at: savedSelection,
@@ -108,6 +112,17 @@ const EmbedModal = (props: any) => {
               value={height}
               onChange={(e: any) => setHeight(e.target.value)}
             />
+            <Field labelText="Responsive">
+              <TextInput
+                autoFocus
+                name="embeded_responsive"
+                placeholder="Responsive"
+                type="checkbox"
+                checked={responsive}
+                style={{"margin-left" : "10px"}}
+                onChange={(e: any) => setResponsive(e.target.checked)}
+              />
+            </Field>
           </Field>
         </form>
       </ModalBody>
