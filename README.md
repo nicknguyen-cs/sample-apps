@@ -26,5 +26,9 @@ This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sam
 
 ## RTE Embed with Metadata
 
+Details coming soon...
+
 ## Custom Select Option from an API Response
+
+Details coming soon...
 
