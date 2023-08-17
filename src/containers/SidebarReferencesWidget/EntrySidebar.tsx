@@ -19,18 +19,6 @@ const EntrySidebarExtension = () => {
       .catch(console.log);
   }, []);
 
-  // Helper function to create request options
-  const createRequestOptions = (method: string, apiKey: string, authorization: string, body?: any): RequestInit => ({
-    method,
-    headers: {
-      "api_key": apiKey,
-      "authorization": authorization,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body),
-    redirect: 'follow'
-  });
-
   // Recursive function to fetch all references and their child references
   async function fetchAllReferences(entryUid: string, contentTypeUid: string, sdk: Extension, depth = 0) {
     const res = await sdk.stack.ContentType(contentTypeUid).Entry(entryUid).getReferences();
