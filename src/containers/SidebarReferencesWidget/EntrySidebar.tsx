@@ -19,31 +19,36 @@ const EntrySidebarExtension = () => {
       .catch(console.log);
   }, []);
 
-  // Recursive function to fetch all references and their child references
-  async function fetchAllReferences(entryUid: string, contentTypeUid: string, sdk: Extension, depth = 0) {
+  async function fetchAllReferences(entryUid: any, contentTypeUid: any, sdk: Extension, depth = 0, isRootCall = true) {
     const res = await sdk.stack.ContentType(contentTypeUid).Entry(entryUid).getReferences();
-    const references = res.references;
-
-    if (!Array.isArray(references) || references.length === 0) return [];
+    const references = res.references || [];
 
     // Add depth to each reference
-    references.forEach(ref => ref.depth = depth);
+    references.forEach((ref : any) => ref.depth = depth);
 
     let allRefs = [...references];
     for (let reference of references) {
-      const childRefs = await fetchAllReferences(reference.entry_uid, reference.content_type_uid, sdk, depth + 1);
-      allRefs = [...allRefs, ...childRefs];
+        const childRefs = await fetchAllReferences(reference.entry_uid, reference.content_type_uid, sdk, depth + 1, false);
+        allRefs = [...allRefs, ...childRefs];
     }
 
-    // Filter duplicates using a Set. If duplicates exist, keep the one with the smallest depth.
-    const uniqueRefs = Array.from(new Set(allRefs.map(ref => ref.entry_uid)))
-      .map(entry_uid => {
-        const duplicates = allRefs.filter(ref => ref.entry_uid === entry_uid);
-        return duplicates.sort((a, b) => a.depth - b.depth)[0];
-      });
+    // If this is the root call (i.e., the initial call), filter duplicates. Otherwise, just return all references.
+    if (isRootCall) {
+        allRefs = filterDuplicatesByDepth(allRefs);
+    }
+
+    return allRefs;
+}
+
+function filterDuplicatesByDepth(references: any[]) {
+    const uniqueRefs = Array.from(new Set(references.map((ref : any) => ref.entry_uid)))
+        .map(entry_uid => {
+            const duplicates = references.filter(ref => ref.entry_uid === entry_uid);
+            return duplicates.sort((a, b) => a.depth - b.depth)[0];
+        });
 
     return uniqueRefs;
-  }
+}
 
 
   // Fetch references for the current entry

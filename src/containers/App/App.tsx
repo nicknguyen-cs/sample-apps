@@ -13,7 +13,7 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  * improving the page load time
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
-const SideBarDeepCloneExtension = React.lazy(() => import("../CustomFieldDeepClone/CustomField"));
+const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/CustomField"));
 const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
 const AppConfigurationExtension = React.lazy(() => import("../ConfigScreen/AppConfiguration"));
 const AssetSidebarExtension = React.lazy(() => import("../AssetSidebarWidget/AssetSidebar"));
