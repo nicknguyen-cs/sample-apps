@@ -13,7 +13,9 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  * improving the page load time
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
+const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
 const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/CustomField"));
+const SideBarResetEntryExtension = React.lazy(() => import("../SideBarResetEntry/SideBar"));
 const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
 const AppConfigurationExtension = React.lazy(() => import("../ConfigScreen/AppConfiguration"));
 const AssetSidebarExtension = React.lazy(() => import("../AssetSidebarWidget/AssetSidebar"));
@@ -39,11 +41,31 @@ function App() {
             }
           />
           <Route
+            path="/custom-field-dynamic-url"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <CustomFieldDynamicUrl />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
             path="/sidebar-extension-deep-clone"
             element={
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <SideBarDeepCloneExtension />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sidebar-extension-reset-entry"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <SideBarResetEntryExtension />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }

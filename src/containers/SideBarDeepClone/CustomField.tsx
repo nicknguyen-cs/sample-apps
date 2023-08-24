@@ -34,7 +34,6 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       const fieldData = await sidebarWidget?.entry.getData();
       const contentType = await sidebarWidget?.entry.content_type;
       const installationData = await sdk.getConfig();
-
       setContentTypeUID(contentType.uid);
       setEntryUID(fieldData.uid);
       setApiKey(installationData.apiKey);
@@ -85,7 +84,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       .fetch();
   };
 
-  const cloneEntry = async () => {
+  const shallowClone = async () => {
     if (!appSDK) return;
 
     setIsLoading(true);
@@ -154,7 +153,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     }
   };
 
-  const localizeEntryForLanguage = async (locale: string, newEntryUID: string, entryUid : string) => {
+  const localizeEntryForLanguage = async (locale: string, newEntryUID: string, entryUid: string) => {
     const entryLocaleData = await appSDK?.stack
       .ContentType(contentTypeUID)
       .Entry(entryUID)
@@ -172,9 +171,108 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
   };
 
   const extractLocalizedLanguages = (languagesArray: any) => {
-    console.log("Languages array:", languagesArray);
     return languagesArray.filter((language: any) => language.localized).map((language: any) => language.code);
   };
+
+  /**
+   * Have to clone references and localization
+   * First get all references, then as you traverse each reference, get the localization and follow shallow clone method.
+   * You have to create references first from bottom up, then work backwards linking references and previous UID's.
+   * 
+   * 
+   * Circular depencies will be an issue, so you have to keep track of UID's and references. 
+   * Example: What if there is A -> B -> C -> D -> E, and then there is also B -> E.
+   * 
+   * It would be easier to collect all references and sort them by depth, then clone them in order.
+   * We would have to keep track of the reference to reference, and if already created then associate it with it. 
+   */
+
+  class Node {
+    data: any;
+    neighbors: Node[] = [];
+    visited: boolean = false;
+    inStack: boolean = false; // for cycle detection
+  }
+
+  let uidMapping: Map<string, string> = new Map();
+
+  const deepClone = async () => {
+    if (!appSDK) return;
+
+    const entryData = await fetchEntryData();
+
+    const rootNode = await buildGraph(entryData.entry);
+    if (hasCycle(rootNode)) {
+      // Handle circular dependency
+      // For now, we'll just throw an error
+      throw new Error("Circular dependency detected!");
+    }
+    await cloneDataInOrder(rootNode);
+  }
+
+  async function buildGraph(data: any, nodeMap: Map<string, Node> = new Map()): Promise<Node> {
+    const node = new Node();
+    node.data = data;
+    nodeMap.set(data.uid, node);
+
+    if (data.reference) {
+      for (const ref of data.reference) {
+        let refNode = nodeMap.get(ref.uid);
+        if (!refNode) {
+          const refData = await appSDK?.stack.ContentType(ref._content_type_uid).Entry(ref.uid).fetch();
+          refNode = await buildGraph(refData, nodeMap);
+        }
+        node.neighbors.push(refNode);
+      }
+    }
+
+    // Handle other potential reference points similarly (e.g., modular_blocks)
+
+    return node;
+  }
+
+  function hasCycle(node: Node): boolean {
+    if (node.inStack) return true;
+    if (node.visited) return false;
+
+    node.visited = true;
+    node.inStack = true;
+
+    for (const neighbor of node.neighbors) {
+      if (hasCycle(neighbor)) return true;
+    }
+
+    node.inStack = false;
+    return false;
+  }
+
+  async function cloneDataInOrder(node: Node): Promise<void> {
+    try {
+      console.log("Visiting node: " , node);
+
+    if (node.visited) return;
+
+    node.visited = true;
+
+    // First clone neighbors (dependencies)
+    for (const neighbor of node.neighbors) {
+      await cloneDataInOrder(neighbor);
+    }
+
+    console.log("Cloning node:", node);
+  } catch (error) {
+    throw error;
+  }
+
+    
+
+    // Clone current node and store mapping
+    //const clonedData = await appSDK?.stack.ContentType(node.data.entry._content_type_uid).entry().create(node.data.entry);
+    //uidMapping.set(node.data.entry.uid, clonedData.entry.uid);
+  }
+
+
+
 
   return (
     <div className="container type-spacing-relaxed">
@@ -185,7 +283,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
         <i>
           <ol>
             <li> Deep Clone will clone all references and locales for this entry.</li>
-            <li> Soft Clone will clone all references.</li>
+            <li> Soft Clone will clone this entry and its localization, but not references.</li>
             <li> Reset will remove all clones created from the previous .</li>
           </ol>
         </i>
@@ -193,11 +291,11 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       <hr />
       <div className="row">
         <ButtonGroup>
-          <Button icon="PublishWhite" onClick={cloneEntry}>
+          <Button icon="PublishWhite" onClick={deepClone}>
             Deep Clone
           </Button>
-          <Button buttonType="secondary" icon="UnpublishAsset" onClick={() => { }}>
-            Soft Clone
+          <Button buttonType="secondary" icon="UnpublishAsset" onClick={shallowClone}>
+            Shallow Clone
           </Button>
           <Button buttonType="light" onClick={() => { }}>
             Reset

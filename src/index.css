@@ -24,6 +24,14 @@ a {
   text-decoration: none;
 }
 
+/* Custom CSS */
+
+.sm-pad {
+  padding : 8px;
+}
+
+/* --- end --- */
+
 /* common properties for app component content*/
 
 .app-component-content {

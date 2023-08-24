@@ -32,6 +32,21 @@ This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sam
  - API Key and Management Token are needed to access the functionality and the app requires the config variables.
  - Open an entry, and locate the widgets section. Find what you named the app location and it should populate a list of all connected content.
 
+## Reset Localization
+
+Users can go to the sidebar and click a button that will reset an entry back to an empty slate. Easy to start a new localization from scratch.
+
+#### Demo
+![My Image](public/gifs/reset-locale.gif)
+
+
+## Dynamic URL
+
+This custom field will take the current locale and pre-pend it to a current url field. So if you're current URL field is "/category/jacket" it will convert it to "/{locale}/category/jacket". The logic can be fine tuned to match your folder structure if needed. 
+
+#### Demo
+![Dynamic URL](public/gifs/dynamic-url.gif)
+
 ## RTE Embed with Metadata
 
 Details coming soon...
