@@ -15,7 +15,7 @@ By using or implementing this code, you acknowledge and accept all risks associa
 
 # App List
 
-##  Check Parent References 
+##  Check Parent References - Sidebar Widget
 
 #### Description
 The check parent references sidebar widget that will show you all content that is associated with it. It will display how many levels of depth above the parent references are as well.
@@ -32,17 +32,17 @@ This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sam
  - API Key and Management Token are needed to access the functionality and the app requires the config variables.
  - Open an entry, and locate the widgets section. Find what you named the app location and it should populate a list of all connected content.
 
-## Reset Localization
+## Reset Localization - Sidebar Widget
 
-Users can go to the sidebar and click a button that will reset an entry back to an empty slate. Easy to start a new localization from scratch. Users will need to refresh the page to see the empty updated entry.
+This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/SideBarResetEntry)Users can go to the sidebar and click a button that will reset an entry back to an empty slate. Easy to start a new localization from scratch. Users will need to refresh the page to see the empty updated entry.
 
 #### Demo
 ![My Image](public/gifs/reset-locale.gif)
 
 
-## Dynamic URL
+## Dynamic URL - Custom Field
 
-This custom field will take the current locale and pre-pend it to a current url field. So if you're current URL field is "/category/jacket" it will convert it to "/{locale}/category/jacket". The logic can be fine tuned to match your folder structure if needed. 
+This custom field is based on the [custom field location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/CustomFieldDynamicUrl). It will take the current locale and pre-pend it to a current url field. So if you're current URL field is "/category/jacket" it will convert it to "/{locale}/category/jacket". The logic can be fine tuned to match your folder structure if needed. 
 
 #### Demo
 ![Dynamic URL](public/gifs/dynamic-url.gif)
