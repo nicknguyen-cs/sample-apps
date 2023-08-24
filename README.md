@@ -34,7 +34,7 @@ This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sam
 
 ## Reset Localization
 
-Users can go to the sidebar and click a button that will reset an entry back to an empty slate. Easy to start a new localization from scratch.
+Users can go to the sidebar and click a button that will reset an entry back to an empty slate. Easy to start a new localization from scratch. Users will need to refresh the page to see the empty updated entry.
 
 #### Demo
 ![My Image](public/gifs/reset-locale.gif)
