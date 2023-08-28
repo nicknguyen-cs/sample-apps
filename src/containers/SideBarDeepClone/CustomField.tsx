@@ -124,7 +124,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       const newEntryUID = await createNewEntry(entry);
       if (newEntryUID) {
         for (const locale of languages) {
-          await localizeEntryForLanguage(locale, newEntryUID, entry.uid);
+          await localizeEntryLanguage(locale, newEntryUID, entry.uid);
         }
         setIsValid(true);
       } else {
@@ -138,6 +138,11 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     }
   };
 
+  /**
+   * Can change this to the SDK, instead of a fetch request.
+   * @param entry - entry for creation
+   * @returns 
+   */
   const createNewEntry = async (entry: any): Promise<string | null> => {
     const requestOptions = createRequestOptions('POST', entry);
     try {
@@ -153,10 +158,16 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     }
   };
 
-  const localizeEntryForLanguage = async (locale: string, newEntryUID: string, entryUid: string) => {
+  /**
+   * 
+   * @param locale - locale to localize content
+   * @param newEntryUID - cloned entry uid that we need to localize.
+   * @param entryUid - get localized content from original.
+   */
+  const localizeEntryLanguage = async (locale: string, newEntryUID: string, entryUid: string) => {
     const entryLocaleData = await appSDK?.stack
       .ContentType(contentTypeUID)
-      .Entry(entryUID)
+      .Entry(entryUid)
       .language(locale).fetch();
 
     entryLocaleData.entry = transformEntryForClone(entryLocaleData.entry);
@@ -175,66 +186,71 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
   };
 
   /**
-   * Have to clone references and localization
-   * First get all references, then as you traverse each reference, get the localization and follow shallow clone method.
-   * You have to create references first from bottom up, then work backwards linking references and previous UID's.
-   * 
-   * 
-   * Circular depencies will be an issue, so you have to keep track of UID's and references. 
-   * Example: What if there is A -> B -> C -> D -> E, and then there is also B -> E.
-   * 
-   * It would be easier to collect all references and sort them by depth, then clone them in order.
-   * We would have to keep track of the reference to reference, and if already created then associate it with it. 
+   * ---------- Deep Clone ------------
    */
 
   class Node {
-    data: any;
-    neighbors: Node[] = [];
-    visited: boolean = false;
+    entry: any;
+    neighbors: Node[] = []; // keep track of all children references
+    visited: boolean = false; // for traversing
     inStack: boolean = false; // for cycle detection
+    cloned: boolean = false; // for cloning
+    _content_type_uid: any; // used for entry creation
   }
 
   let uidMapping: Map<string, string> = new Map();
 
   const deepClone = async () => {
+    uidMapping = new Map();
     if (!appSDK) return;
-
+    let rootNode = null;
     const entryData = await fetchEntryData();
-
-    const rootNode = await buildGraph(entryData.entry);
+    rootNode = await buildGraph(entryData.entry);
+    rootNode._content_type_uid = contentTypeUID; // because the base node needs a uid for cloning, and its not provided, like the references are
     if (hasCycle(rootNode)) {
-      // Handle circular dependency
-      // For now, we'll just throw an error
       throw new Error("Circular dependency detected!");
     }
     await cloneDataInOrder(rootNode);
   }
 
-  async function buildGraph(data: any, nodeMap: Map<string, Node> = new Map()): Promise<Node> {
+  /**
+   * buildGraph will recursively build a node tree from the parent entry down to all its references. With each reference it finds, it will recurse down each tree and return them up
+   * in a child to parent relation. This helps us clone from the child entry to the parent, because references work in the opposite direction and we need the child UID
+   * before we can make the connection.
+   * @param entry - the entry object to start building the graph from
+   * @param nodeMap - this keeps track of all the nodes that have been created so far. This is to avoid creating duplicate nodes for the same entry during recursion
+   * @returns 
+   */
+  async function buildGraph(entry: any, nodeMap: Map<string, Node> = new Map()): Promise<Node> {
     const node = new Node();
-    node.data = data;
-    nodeMap.set(data.uid, node);
-
-    if (data.reference) {
-      for (const ref of data.reference) {
-        let refNode = nodeMap.get(ref.uid);
-        if (!refNode) {
-          const refData = await appSDK?.stack.ContentType(ref._content_type_uid).Entry(ref.uid).fetch();
-          refNode = await buildGraph(refData, nodeMap);
+    node.entry = entry;
+    nodeMap.set(entry.uid, node);
+    let references = getReferences(entry);
+    if (references.length > 0) {
+      for (const reference of references) {
+        let referenceNode = nodeMap.get(reference.uid); // if reference already exists. Dont do a circle dependency.
+        if (!referenceNode) {
+          let referenceData = await appSDK?.stack.ContentType(reference._content_type_uid).Entry(reference.uid).fetch();
+          referenceNode = await buildGraph(referenceData.entry, nodeMap);
+          referenceNode._content_type_uid = reference._content_type_uid;
         }
-        node.neighbors.push(refNode);
+        referenceNode.visited = false;
+        node.neighbors.push(referenceNode);
       }
     }
-
-    // Handle other potential reference points similarly (e.g., modular_blocks)
 
     return node;
   }
 
+  /**
+   * This just makes sure we don't have a circular dependency and crash anything. Possibly not needed.
+   * @param node - the node to start the traversal from
+   * @returns 
+   */
   function hasCycle(node: Node): boolean {
+
     if (node.inStack) return true;
     if (node.visited) return false;
-
     node.visited = true;
     node.inStack = true;
 
@@ -246,33 +262,79 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     return false;
   }
 
-  async function cloneDataInOrder(node: Node): Promise<void> {
+  /**
+   * We recursively make our way to the bottom of the tree, and then start cloning from the bottom up.
+   * @param node - the node to start the cloning from
+   * @returns 
+   */
+  async function cloneDataInOrder(node: Node): Promise<string | undefined> {
     try {
-      console.log("Visiting node: " , node);
 
-    if (node.visited) return;
+      if (node.cloned) return "cloned";
+      node.cloned = true;
 
-    node.visited = true;
-
-    // First clone neighbors (dependencies)
-    for (const neighbor of node.neighbors) {
-      await cloneDataInOrder(neighbor);
+      for (const neighbor of node.neighbors) {
+        await cloneDataInOrder(neighbor);
+      }
+      transformEntryForCloneDeep(node.entry);
+      let newEntry = await appSDK?.stack.ContentType(node._content_type_uid).Entry.create({ "entry": node.entry });
+      if (newEntry && newEntry.entry && newEntry.entry.uid) {
+        uidMapping.set(node.entry.uid, newEntry.entry.uid);
+      } else {
+        console.error("Failed to create new entry or unexpected structure:", newEntry);
+      }
+    } catch (error) {
+      throw error;
     }
-
-    console.log("Cloning node:", node);
-  } catch (error) {
-    throw error;
   }
 
-    
-
-    // Clone current node and store mapping
-    //const clonedData = await appSDK?.stack.ContentType(node.data.entry._content_type_uid).entry().create(node.data.entry);
-    //uidMapping.set(node.data.entry.uid, clonedData.entry.uid);
+  /**
+   * We have to manipulate the UID's of references, and certain fields to make use the payload for a create entry call.
+   * @param entry - the entry to transform
+   */
+  function transformEntryForCloneDeep(entry: any) {
+    delete entry.uid;
+    transformEntryForClone(entry);
+    updateEntryReferenceUids(entry);
   }
 
+  function updateEntryReferenceUids(entry: any) {
+    // Base case: if payload is not an object or array, return
+    if (typeof entry !== 'object' || entry === null) return;
 
+    // If payload is an array with the expected structure
+    if (Array.isArray(entry) && entry.length > 0 && entry[0].uid && entry[0]._content_type_uid) {
+      for (let item of entry) {
+        if (uidMapping.has(item.uid)) {
+          item.uid = uidMapping.get(item.uid);
+        }
+      }
+    } else {
+      // Otherwise, recursively traverse the object
+      for (let key in entry) {
+        updateEntryReferenceUids(entry[key]);
+      }
+    }
+  }
 
+  function getReferences(jsonField: any) {
+    let references: any[] = [];
+    // Base case: if payload is not an object or array, return
+    if (typeof jsonField !== 'object' || jsonField === null) return references;
+
+    // If payload is an array with the expected structure
+    if (Array.isArray(jsonField) && jsonField.length > 0 && jsonField[0].uid && jsonField[0]._content_type_uid) {
+      for (let item of jsonField) {
+        references.push(item);
+      }
+    } else {
+      // Otherwise, recursively traverse the object
+      for (let key in jsonField) {
+        references = [...references, ...getReferences(jsonField[key])];
+      }
+    }
+    return references;
+  }
 
   return (
     <div className="container type-spacing-relaxed">
