@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ContentstackAppSDK from '@contentstack/app-sdk';
-import { Button, HelpText, Icon, ButtonGroup } from '@contentstack/venus-components';
+import { Button, HelpText, Icon, ButtonGroup, Checkbox, FieldLabel } from '@contentstack/venus-components';
 import '@contentstack/venus-components/build/main.css';
 
 // Interfaces for type safety and clarity
@@ -352,6 +352,38 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
         </i>
       </HelpText>
       <hr />
+      <div className="row">
+        <FieldLabel htmlFor="languages">Settings</FieldLabel>
+        <div className='col-12'>
+          <Checkbox
+            label={"Include Current Entry"}
+            checked={false}
+            isButton={false}
+            isLabelFullWidth={true}
+          />
+        </div>
+      </div>
+      <div className="row">
+        <div className='col-12'>
+          <Checkbox
+            label={"Include All Languages"}
+            id="languages"
+            checked={false}
+            isButton={false}
+            isLabelFullWidth={true}
+          />
+        </div>
+      </div>
+      <div className="row">
+        <div className='col-12'>
+          <Checkbox
+            label={"Include All References"}
+            checked={false}
+            isButton={false}
+            isLabelFullWidth={true}
+          />
+        </div>
+      </div>
       <div className="row">
         <ButtonGroup>
           <Button icon="PublishWhite" onClick={deepClone}>
