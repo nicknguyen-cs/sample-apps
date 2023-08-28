@@ -276,10 +276,11 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       for (const neighbor of node.neighbors) {
         await cloneDataInOrder(neighbor);
       }
+      const currentUid = node.entry.uid; // have to use this, because we remove uid for creating the entry.
       transformEntryForCloneDeep(node.entry);
       let newEntry = await appSDK?.stack.ContentType(node._content_type_uid).Entry.create({ "entry": node.entry });
       if (newEntry && newEntry.entry && newEntry.entry.uid) {
-        uidMapping.set(node.entry.uid, newEntry.entry.uid);
+        uidMapping.set(currentUid, newEntry.entry.uid);
       } else {
         console.error("Failed to create new entry or unexpected structure:", newEntry);
       }
