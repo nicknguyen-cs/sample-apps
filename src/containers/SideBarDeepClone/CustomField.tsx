@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ContentstackAppSDK from '@contentstack/app-sdk';
-import { Button, HelpText, Icon, ButtonGroup, Checkbox, FieldLabel } from '@contentstack/venus-components';
+import { Button, HelpText, Icon, Checkbox, FieldLabel, cbModal, ToggleSwitch, AsyncLoader } from '@contentstack/venus-components';
+import Modal from "../../components/CloneComponents/Modal";
+import MiniTable from "../../components/CloneComponents/MiniTable";
+
 import '@contentstack/venus-components/build/main.css';
+import { min, set } from 'lodash';
 
 // Interfaces for type safety and clarity
 interface AppSDK {
@@ -12,16 +16,31 @@ interface AppSDK {
   stack?: any;
 }
 
+interface Settings {
+  includeDeepClone: boolean;
+  includeAllLanguages: boolean;
+  includeAllReferences: boolean;
+}
+
 const EntrySidebarExtensionDeepClone: React.FC = () => {
   // State declarations
   const [apiKey, setApiKey] = useState<string>('');
   const [authorization, setAuthorization] = useState<string>('');
   const [appSDK, setAppSDK] = useState<AppSDK | null>(null);
-  const [contentTypeUID, setContentTypeUID] = useState<string>('');
-  const [entryUID, setEntryUID] = useState<string>('');
+  const [contentTypeUid, setContentTypeUid] = useState<string>('');
   const [masterLanguage, setMasterLanguage] = useState<string>('en-us');
+  const [references, setReferences] = useState<any>(null);
+
+  const [counter, setCounter] = useState<number>(0);
+
   const [isValid, setIsValid] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [miniTableLoading, setIsMiniTableLoading] = useState<boolean>(false);
+  const [settings, setSettings] = useState<Settings>({
+    includeDeepClone: false,
+    includeAllLanguages: false,
+    includeAllReferences: false
+  });
+  const ref = useRef(null);
 
   // Initialize the app and set necessary state values
   useEffect(() => {
@@ -29,19 +48,34 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       const sdk = await ContentstackAppSDK.init();
       window.postRobot = sdk.postRobot;
       setAppSDK(sdk);
+      const iframeWrapperRef = document.getElementById('root')
+      //  @ts-ignore
+      window.iframeRef = iframeWrapperRef;
 
+      window.postRobot = sdk.postRobot
       const sidebarWidget = sdk.location?.SidebarWidget;
       const fieldData = await sidebarWidget?.entry.getData();
       const contentType = await sidebarWidget?.entry.content_type;
       const installationData = await sdk.getConfig();
-      setContentTypeUID(contentType.uid);
-      setEntryUID(fieldData.uid);
+      setContentTypeUid(contentType.uid);
       setApiKey(installationData.apiKey);
       setAuthorization(installationData.accessToken);
     };
 
     initializeApp();
   }, []);
+
+  useEffect(() => {
+    if (appSDK) {
+      setIsMiniTableLoading(true);
+      const init = async () => {
+        let references = await getAllReferences();
+        setReferences(references);
+      }
+      init();
+      setIsMiniTableLoading(false);
+    }
+  }, [contentTypeUid]);
 
   // Helper functions
   const getSidebarWidget = () => appSDK?.location?.SidebarWidget;
@@ -57,6 +91,18 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     redirect: 'follow'
   });
 
+  const shallowClone = async () => {
+    if (!appSDK) return;
+
+    const languages = await fetchLocalesAndLanguages();
+    const entry = await fetchEntryData();
+
+    if (entry) {
+      entry.entry = await transformEntryForClone(entry.entry);
+      await createAndLocalizeClone(languages, entry);
+    }
+  };
+
   const fetchLocalesAndLanguages = async () => {
     const sidebarWidget = getSidebarWidget();
     if (!appSDK || !sidebarWidget) return [];
@@ -70,31 +116,6 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       .getLanguages();
 
     return extractLocalizedLanguages(locales.locales);
-  };
-
-  const fetchEntryData = async () => {
-    const sidebarWidget = getSidebarWidget();
-    if (!appSDK || !sidebarWidget) return null;
-
-    const fieldData = await sidebarWidget.entry.getData();
-    const contentType = await sidebarWidget.entry.content_type;
-    return appSDK.stack
-      .ContentType(contentType.uid)
-      .Entry(fieldData.uid)
-      .fetch();
-  };
-
-  const shallowClone = async () => {
-    if (!appSDK) return;
-
-    setIsLoading(true);
-    const languages = await fetchLocalesAndLanguages();
-    const entry = await fetchEntryData();
-
-    if (entry) {
-      entry.entry = await transformEntryForClone(entry.entry);
-      await createAndLocalizeClone(languages, entry);
-    }
   };
 
   const transformEntryForClone = (entry: any) => {
@@ -117,9 +138,19 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     return entry;
   };
 
+  const fetchEntryData = async () => {
+    const sidebarWidget = getSidebarWidget();
+    if (!appSDK || !sidebarWidget) return null;
+    const fieldData = await sidebarWidget.entry.getData();
+    const contentType = await sidebarWidget.entry.content_type;
+    return appSDK.stack
+      .ContentType(contentType.uid)
+      .Entry(fieldData.uid)
+      .fetch();
+  };
+
 
   const createAndLocalizeClone = async (languages: string[], entry: any) => {
-    setIsLoading(true);
     try {
       const newEntryUID = await createNewEntry(entry);
       if (newEntryUID) {
@@ -134,7 +165,6 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       setIsValid(false);
       console.error('Error:', error);
     } finally {
-      setIsLoading(false);
     }
   };
 
@@ -146,7 +176,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
   const createNewEntry = async (entry: any): Promise<string | null> => {
     const requestOptions = createRequestOptions('POST', entry);
     try {
-      const response = await fetch(`https://api.contentstack.io/v3/content_types/${contentTypeUID}/entries?locale=${masterLanguage}`, requestOptions);
+      const response = await fetch(`https://api.contentstack.io/v3/content_types/${contentTypeUid}/entries?locale=${masterLanguage}`, requestOptions);
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
       }
@@ -166,7 +196,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
    */
   const localizeEntryLanguage = async (locale: string, newEntryUID: string, entryUid: string) => {
     const entryLocaleData = await appSDK?.stack
-      .ContentType(contentTypeUID)
+      .ContentType(contentTypeUid)
       .Entry(entryUid)
       .language(locale).fetch();
 
@@ -174,7 +204,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
 
     const requestOptions = createRequestOptions('PUT', entryLocaleData);
     try {
-      const response = await fetch(`https://api.contentstack.io/v3/content_types/${contentTypeUID}/entries/${newEntryUID}?locale=${locale}`, requestOptions);
+      const response = await fetch(`https://api.contentstack.io/v3/content_types/${contentTypeUid}/entries/${newEntryUID}?locale=${locale}`, requestOptions);
       console.log("Localization success:", response);
     } catch (error) {
       console.error('Localization error:', error);
@@ -200,17 +230,21 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
 
   let uidMapping: Map<string, string> = new Map();
 
-  const deepClone = async () => {
-    uidMapping = new Map();
-    if (!appSDK) return;
+  async function getAllReferences() {
     let rootNode = null;
     const entryData = await fetchEntryData();
     rootNode = await buildGraph(entryData.entry);
-    rootNode._content_type_uid = contentTypeUID; // because the base node needs a uid for cloning, and its not provided, like the references are
+    rootNode._content_type_uid = contentTypeUid; // because the base node needs a uid for cloning, and its not provided, like the references are
     if (hasCycle(rootNode)) {
       throw new Error("Circular dependency detected!");
     }
-    await cloneDataInOrder(rootNode);
+    return rootNode;
+  }
+
+  const deepClone = async () => {
+    let node = await getAllReferences();
+    setCounter(0);
+    await cloneDataInOrder(node);
   }
 
   /**
@@ -235,10 +269,9 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
           referenceNode._content_type_uid = reference._content_type_uid;
         }
         referenceNode.visited = false;
-        node.neighbors.push(referenceNode);
+        node.neighbors.push(referenceNode); // push duplicate references for child to parent cloning, but only clone uniques.
       }
     }
-
     return node;
   }
 
@@ -269,7 +302,6 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
    */
   async function cloneDataInOrder(node: Node): Promise<string | undefined> {
     try {
-
       if (node.cloned) return "cloned";
       node.cloned = true;
 
@@ -279,11 +311,13 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       const currentUid = node.entry.uid; // have to use this, because we remove uid for creating the entry.
       transformEntryForCloneDeep(node.entry);
       let newEntry = await appSDK?.stack.ContentType(node._content_type_uid).Entry.create({ "entry": node.entry });
+      setCounter((prevCount: number) => prevCount + 1);
       if (newEntry && newEntry.entry && newEntry.entry.uid) {
         uidMapping.set(currentUid, newEntry.entry.uid);
       } else {
         console.error("Failed to create new entry or unexpected structure:", newEntry);
       }
+      console.log(counter);
     } catch (error) {
       throw error;
     }
@@ -337,65 +371,66 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
     return references;
   }
 
+  const handleClick = (e: any) => {
+    cbModal({
+      component: (props: any) => (<Modal {...props} clone={deepClone} counter={counter}/>),
+      modalProps: {
+        size: "max"
+      }
+    })
+  }
+
+  const toggleSetting = (settingKey: keyof Settings) => {
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      [settingKey]: !prevSettings[settingKey]
+    }));
+  };
+
+  const isReferencesAvailable = () => {
+    return references != null
+  };
+
   return (
     <div className="container type-spacing-relaxed">
       <div className="entry-sidebar-icon">
         <Icon icon="Reference" size="large" />
       </div>
       <HelpText>
-        <i>
-          <ol>
-            <li> Deep Clone will clone all references and locales for this entry.</li>
-            <li> Soft Clone will clone this entry and its localization, but not references.</li>
-            <li> Reset will remove all clones created from the previous .</li>
-          </ol>
-        </i>
+        Select options to clone this entry.
       </HelpText>
       <hr />
       <div className="row">
         <FieldLabel htmlFor="languages">Settings</FieldLabel>
-        <div className='col-12'>
-          <Checkbox
-            label={"Include Current Entry"}
-            checked={false}
-            isButton={false}
-            isLabelFullWidth={true}
-          />
-        </div>
       </div>
       <div className="row">
-        <div className='col-12'>
+        <div className='col-12 sm-pad'>
           <Checkbox
             label={"Include All Languages"}
             id="languages"
-            checked={false}
+            checked={settings.includeAllLanguages}
             isButton={false}
             isLabelFullWidth={true}
+            onChange={() => toggleSetting("includeAllLanguages")}
           />
         </div>
       </div>
-      <div className="row">
-        <div className='col-12'>
-          <Checkbox
-            label={"Include All References"}
-            checked={false}
-            isButton={false}
-            isLabelFullWidth={true}
-          />
+
+      <div>
+        <div className="col-12 sm-pad">
+          {miniTableLoading ? (
+            <AsyncLoader color="#6C5CE7" />
+          ) : (
+            isReferencesAvailable() && <MiniTable references={references} />
+          )}        
         </div>
       </div>
       <div className="row">
-        <ButtonGroup>
-          <Button icon="PublishWhite" onClick={deepClone}>
-            Deep Clone
+        <div className="col-12 sm-pad">
+          <Button icon="PublishWhite" onClick={handleClick}>
+            Clone
           </Button>
-          <Button buttonType="secondary" icon="UnpublishAsset" onClick={shallowClone}>
-            Shallow Clone
-          </Button>
-          <Button buttonType="light" onClick={() => { }}>
-            Reset
-          </Button>
-        </ButtonGroup>
+        </div>
       </div>
     </div>
   );

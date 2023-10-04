@@ -1,3 +1,3 @@
 import React from 'react';
-declare const SocialEmbed: (props: any) => React.JSX.Element;
-export default SocialEmbed;
+declare const Embed: (props: any) => React.JSX.Element;
+export default Embed;

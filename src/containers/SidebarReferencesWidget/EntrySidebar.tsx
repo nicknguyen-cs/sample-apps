@@ -19,36 +19,44 @@ const EntrySidebarExtension = () => {
       .catch(console.log);
   }, []);
 
-  async function fetchAllReferences(entryUid: any, contentTypeUid: any, sdk: Extension, depth = 0, isRootCall = true) {
+  async function fetchAllReferences(entryUid: any, contentTypeUid: any, sdk: Extension, depth = 0, isRootCall = true, visited: Set<any> = new Set()) {
+    if (visited.has(entryUid)) {
+      // Already visited this entry; return to avoid infinite recursion
+      return [];
+    }
+
+    visited.add(entryUid);
+
     const res = await sdk.stack.ContentType(contentTypeUid).Entry(entryUid).getReferences();
     const references = res.references || [];
 
+    if (!Array.isArray(references) || references.length === 0) return [];
     // Add depth to each reference
-    references.forEach((ref : any) => ref.depth = depth);
+    references.forEach((ref: any) => ref.depth = depth);
 
     let allRefs = [...references];
     for (let reference of references) {
-        const childRefs = await fetchAllReferences(reference.entry_uid, reference.content_type_uid, sdk, depth + 1, false);
-        allRefs = [...allRefs, ...childRefs];
+      const childRefs = await fetchAllReferences(reference.entry_uid, reference.content_type_uid, sdk, depth + 1, false, visited);
+      allRefs = [...allRefs, ...childRefs];
     }
 
     // If this is the root call (i.e., the initial call), filter duplicates. Otherwise, just return all references.
     if (isRootCall) {
-        allRefs = filterDuplicatesByDepth(allRefs);
+      allRefs = filterDuplicatesByDepth(allRefs);
     }
-
     return allRefs;
-}
+  }
 
-function filterDuplicatesByDepth(references: any[]) {
-    const uniqueRefs = Array.from(new Set(references.map((ref : any) => ref.entry_uid)))
-        .map(entry_uid => {
-            const duplicates = references.filter(ref => ref.entry_uid === entry_uid);
-            return duplicates.sort((a, b) => a.depth - b.depth)[0];
-        });
+
+  function filterDuplicatesByDepth(references: any[]) {
+    const uniqueRefs = Array.from(new Set(references.map((ref: any) => ref.entry_uid)))
+      .map(entry_uid => {
+        const duplicates = references.filter(ref => ref.entry_uid === entry_uid);
+        return duplicates.sort((a, b) => a.depth - b.depth)[0];
+      });
 
     return uniqueRefs;
-}
+  }
 
 
   // Fetch references for the current entry
@@ -56,8 +64,10 @@ function filterDuplicatesByDepth(references: any[]) {
     const sidebarWidget = sdk.location?.SidebarWidget;
     const fieldData = await sidebarWidget?.entry.getData();
     const contentTypeUID = (await sidebarWidget?.entry.content_type).uid;
+    console.log("Help");
     const refs = await fetchAllReferences(fieldData.uid, contentTypeUID, sdk);
-    console.log(refs);
+    console.log("Nothign");
+    console.log("REFS: ", refs);
     setAllReferences(refs);
   }
 
@@ -68,7 +78,7 @@ function filterDuplicatesByDepth(references: any[]) {
         <React.Fragment key={index}>
           {/* Render a heading if it's the first reference or if the depth has changed */}
           {(index === 0 || allReferences[index - 1].depth !== reference.depth) && (
-            <h2 style={{"padding" : "5px"}}>Depth {reference.depth + 1}</h2>
+            <h2 style={{ "padding": "5px" }}>Depth {reference.depth + 1}</h2>
           )}
           <a
             style={{ textAlign: "left" }}

@@ -23,7 +23,6 @@ export default ContentstackSDK.init().then(async (sdk) => {
 
   RtePlugin.on("exec", (rte: any) => {
     let config =rte.getFieldConfig();
-    console.log("****Config: ", config);
     const savedSelection = rte.selection.get();
     cbModal({
       component: (props: any) => (

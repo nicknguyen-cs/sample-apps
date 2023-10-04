@@ -10,9 +10,9 @@ const Embed = (props: any) => {
     const url = `https://www.youtube.com/embed/${match[1]}`;
     const savedSelection = props.rte.selection.get();
     const rte = props.rte;
-    console.log("embed: " ,url)
+    console.log("Hello");
     return (
-        <div {...attributes} style={{ width: '100%' }}>
+        <div {...attributes} style={{ width: '100%', 'z-index': "1000", 'position':'absolute' }}>
             <ActionTooltip
                 className=""
                 list={[
@@ -26,6 +26,17 @@ const Embed = (props: any) => {
                         },
                         label: <Icon icon="EditTransparent" size="mini" />,
                         title: 'Update',
+                    },
+                    {
+                        action: () => {
+                            cbModal({
+                                component: (props: any) => (
+                                    <DeleteModal savedSelection={savedSelection} rte={rte} update={true} {...props} />
+                                )
+                            });
+                        },
+                        label: <Icon icon="Trash" size="mini" />,
+                        title: 'Delete',
                     },
                     {
                         action: () => {
