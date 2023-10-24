@@ -15,10 +15,14 @@ const CustomFieldSelector: React.FC = () => {
 
       const locale = customField?.entry.getData().locale;
       const url = customField?.entry.getData().url;
-      
+
+      let e = customField?.entry.getData()
+      console.log(e.height)
+
       // Checks to see if the URL is already containing a locale code. This logic can be worked on for personal use case.
       if (url && locale && url.indexOf(locale) !== 1) {
-        const newSlug = `/${locale}${url}`;
+        console.log(e.height)
+        const newSlug = `/${locale}${url}bose/sandbox/environment?height=${e.height}`;
         customField?.entry.getField('url')?.setData(newSlug);
       }
     });

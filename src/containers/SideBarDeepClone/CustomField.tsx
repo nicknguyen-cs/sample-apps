@@ -5,6 +5,7 @@ import Modal from "../../components/CloneComponents/Modal";
 import MiniTable from "../../components/CloneComponents/MiniTable";
 
 import '@contentstack/venus-components/build/main.css';
+import './clone.css'
 import { min, set } from 'lodash';
 
 // Interfaces for type safety and clarity
@@ -54,7 +55,6 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
 
       window.postRobot = sdk.postRobot
       const sidebarWidget = sdk.location?.SidebarWidget;
-      const fieldData = await sidebarWidget?.entry.getData();
       const contentType = await sidebarWidget?.entry.content_type;
       const installationData = await sdk.getConfig();
       setContentTypeUid(contentType.uid);
@@ -373,7 +373,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
 
   const handleClick = (e: any) => {
     cbModal({
-      component: (props: any) => (<Modal {...props} clone={deepClone} counter={counter}/>),
+      component: (props: any) => (<Modal modalProps={props} appSDK={appSDK} contentTypeUID={contentTypeUid} />),
       modalProps: {
         size: "max"
       }
@@ -422,7 +422,7 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
             <AsyncLoader color="#6C5CE7" />
           ) : (
             isReferencesAvailable() && <MiniTable references={references} />
-          )}        
+          )}
         </div>
       </div>
       <div className="row">

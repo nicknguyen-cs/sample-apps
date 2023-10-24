@@ -12,11 +12,15 @@ const EntrySidebarExtension = () => {
   // Initialize Contentstack SDK and fetch references on component mount
   useEffect(() => {
     ContentstackAppSDK.init()
-      .then(sdk => {
+      .then(async sdk => {
         setAppSDK(sdk);
         fetchReferences(sdk);
+        var customField = await sdk.location.CustomField;
+        var branch = await sdk.stack.getCurrentBranch();
+        console.log(branch)
       })
       .catch(console.log);
+
   }, []);
 
   async function fetchAllReferences(entryUid: any, contentTypeUid: any, sdk: Extension, depth = 0, isRootCall = true, visited: Set<any> = new Set()) {
@@ -64,10 +68,7 @@ const EntrySidebarExtension = () => {
     const sidebarWidget = sdk.location?.SidebarWidget;
     const fieldData = await sidebarWidget?.entry.getData();
     const contentTypeUID = (await sidebarWidget?.entry.content_type).uid;
-    console.log("Help");
     const refs = await fetchAllReferences(fieldData.uid, contentTypeUID, sdk);
-    console.log("Nothign");
-    console.log("REFS: ", refs);
     setAllReferences(refs);
   }
 
@@ -107,6 +108,11 @@ const EntrySidebarExtension = () => {
       <HelpText>
         <i>The following entries are connected to this entry.</i>
       </HelpText>
+      <select>
+        <option value="1">DEV</option>
+        <option value="2">QA</option>
+        <option value="3">Production</option>
+      </select>
       <hr />
       {VariationRow()}
     </div>

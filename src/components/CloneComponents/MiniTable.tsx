@@ -10,12 +10,6 @@ const MiniTable = (props: any) => {
         </div>
     </>)
 
-    const list = [
-        { id: 2, name: 'Control', percentage: 50 },
-        { id: 2, name: 'Variation1', percentage: 50 },
-        { id: 2, name: 'Variation2', percentage: 50 }
-    ]
-
     const VariationRows = () => {
         const processedUids = new Set<string>();
         let elements = traverseNode(props.references, processedUids);
