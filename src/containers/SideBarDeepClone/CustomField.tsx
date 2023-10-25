@@ -7,21 +7,7 @@ import MiniTable from "../../components/CloneComponents/MiniTable";
 import '@contentstack/venus-components/build/main.css';
 import './clone.css'
 import { min, set } from 'lodash';
-
-// Interfaces for type safety and clarity
-interface AppSDK {
-  location?: {
-    SidebarWidget?: any;
-  };
-  getConfig?: () => Promise<any>;
-  stack?: any;
-}
-
-interface Settings {
-  includeDeepClone: boolean;
-  includeAllLanguages: boolean;
-  includeAllReferences: boolean;
-}
+import { AppSDK, Settings } from '../../types/cloneTypes';
 
 const EntrySidebarExtensionDeepClone: React.FC = () => {
   // State declarations

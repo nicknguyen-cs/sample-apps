@@ -2,36 +2,7 @@ import React, { useState } from "react"
 import { ModalFooter, ModalBody, ModalHeader, ButtonGroup, Button, Paragraph } from "@contentstack/venus-components"
 import './clone.css';
 import ContentstackAppSDK from "@contentstack/app-sdk";
-
-interface Request {
-    id: number;
-    status: 'loading' | 'completed';
-}
-
-interface AppSDK {
-    location?: {
-      SidebarWidget?: any;
-    };
-    getConfig?: () => Promise<any>;
-    stack?: any;
-  }
-  
-
-class Node {
-    entry: any;
-    neighbors: Node[] = []; // keep track of all children references
-    visited: boolean = false; // for traversing
-    inStack: boolean = false; // for cycle detection
-    cloned: boolean = false; // for cloning
-    _content_type_uid: any; // used for entry creation
-}
-
-interface ModalProps {
-    appSDK: AppSDK | null;
-    contentTypeUID: string;
-    modalProps: any;
-  }
-  
+import { EntryNode, ModalProps } from "../../types/cloneTypes";
 
 const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}) => {
 
@@ -74,7 +45,7 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
        * @param node - the node to start the cloning from
        * @returns 
        */
-    async function cloneDataInOrder(node: Node): Promise<string | undefined> {
+    async function cloneDataInOrder(node: EntryNode): Promise<string | undefined> {
         try {
             if (node.cloned) return "cloned";
             node.cloned = true;
@@ -103,8 +74,8 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
    * @param nodeMap - this keeps track of all the nodes that have been created so far. This is to avoid creating duplicate nodes for the same entry during recursion
    * @returns 
    */
-    async function buildGraph(entry: any, nodeMap: Map<string, Node> = new Map()): Promise<Node> {
-        const node = new Node();
+    async function buildGraph(entry: any, nodeMap: Map<string, EntryNode> = new Map()): Promise<EntryNode> {
+        const node = new EntryNode();
         node.entry = entry;
         nodeMap.set(entry.uid, node);
         let references = getReferences(entry);
@@ -172,8 +143,10 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
         }
     }
 
-    const handleRequest = () => {
+    const handleRequest = async () => {
         setLoading(true);
+        await deepClone();
+        /*
         const requestId = Date.now();
 
         // Add a new request with a loading status
@@ -188,6 +161,8 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
             });
             setLoading(false);
         }, Math.random() * 2000 + 1000);  // Random time between 1-3 seconds for variety
+        */
+       setLoading(false);
     };
 
     /**
@@ -195,7 +170,7 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
    * @param node - the node to start the traversal from
    * @returns 
    */
-    function hasCycle(node: Node): boolean {
+    function hasCycle(node: EntryNode): boolean {
 
         if (node.inStack) return true;
         if (node.visited) return false;
@@ -235,22 +210,9 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
             <ModalHeader title={"Deep Clone"} closeModal={modalProps.closeModal} />
             <ModalBody className="modalBodyCustomClass">
                 <div className="api-container">
-                    <button className="api-button" onClick={handleRequest} disabled={false}>
-                        Initiate API Request
-                    </button>
-                    <ul className="request-list">
-                        {requests.map(request => (
-                            <li key={request.id}>
-                                {request.status === 'loading' ? (
-                                    <>
-                                        <div className="loader"></div> Processing...
-                                    </>
-                                ) : (
-                                    "✓ Completed"
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+                    <Button icon="PublishWhite" onClick={handleRequest} isLoading={loading}>
+                        Start Clone
+                    </Button>
                 </div>
             </ModalBody>
             <ModalFooter>
