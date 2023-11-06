@@ -1,30 +1,37 @@
-import React, { useState } from "react"
-import { ModalFooter, ModalBody, ModalHeader, ButtonGroup, Button, Paragraph } from "@contentstack/venus-components"
+import React, { useEffect, useState } from "react"
+import { ModalFooter, ModalBody, ModalHeader, ButtonGroup, Button, Paragraph, FieldLabel, HelpText, MiniScrollableTable, TextInput, Icon, Checkbox } from "@contentstack/venus-components"
 import './clone.css';
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import { EntryNode, ModalProps } from "../../types/cloneTypes";
+import { set } from "lodash";
 
-const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}) => {
+const SelectModal: React.FC<ModalProps> = ({ appSDK, contentTypeUID, modalProps, config }) => {
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [requests, setRequests] = useState<Request[]>([]);
+    let [loading, setLoading] = useState<boolean>(false);
+    let [isCloned, setIsCloned] = useState<boolean>(false);
+    let [language, setLanguage] = useState<boolean>(false);
+    let [miniTableData, setMiniTableData] = useState<any[]>([]);
+
     const getSidebarWidget = () => appSDK?.location?.SidebarWidget;
 
     let uidMapping: Map<string, string> = new Map();
 
-
     const deepClone = async () => {
-        let node = await getAllReferences();
+        setLoading(true);
+        setMiniTableData([]);
+        let node = await buildEntryNode();
         await cloneDataInOrder(node);
+        setLoading(false);
+        setIsCloned(true);
     }
 
-    async function getAllReferences() {
+    async function buildEntryNode() {
         let rootNode = null;
         const entryData = await fetchEntryData();
-        rootNode = await buildGraph(entryData.entry);
+        rootNode = await generateRootNode(entryData.entry);
         rootNode._content_type_uid = contentTypeUID; // because the base node needs a uid for cloning, and its not provided, like the references are
         if (hasCycle(rootNode)) {
-            throw new Error("Circular dependency detected!");
+            throw new Error("Circular dependency detected! Cannot clone.");
         }
         return rootNode;
     }
@@ -45,26 +52,75 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
        * @param node - the node to start the cloning from
        * @returns 
        */
-    async function cloneDataInOrder(node: EntryNode): Promise<string | undefined> {
-        try {
-            if (node.cloned) return "cloned";
-            node.cloned = true;
 
-            for (const neighbor of node.neighbors) {
-                await cloneDataInOrder(neighbor);
-            }
-            const currentUid = node.entry.uid; // have to use this, because we remove uid for creating the entry.
-            transformEntryForCloneDeep(node.entry);
+    async function cloneDataInOrder(node: EntryNode): Promise<string | undefined> {
+        if (node.cloned) return "cloned";
+        node.cloned = true;
+
+        for (const neighbor of node.neighbors) {
+            await cloneDataInOrder(neighbor);
+        }
+
+        const currentUid = node.entry.uid; // have to use this, because we remove uid for creating the entry.
+        transformEntry(node.entry);
+        try {
+
             let newEntry = await appSDK?.stack.ContentType(node._content_type_uid).Entry.create({ "entry": node.entry });
             if (newEntry && newEntry.entry && newEntry.entry.uid) {
                 uidMapping.set(currentUid, newEntry.entry.uid);
+                if (language) {
+                    let languages = await fetchLocalesAndLanguages(currentUid, node._content_type_uid);
+                    for (const locale of languages) {
+                        await localizeEntryLanguage(locale, newEntry.entry.uid, currentUid, node._content_type_uid);
+                    }
+                }
+
+                setMiniTableData(prevSummary => [...prevSummary, {
+                    contentType: node._content_type_uid,
+                    title: node.entry.title,
+                    uid: node.entry.uid
+                }]);
             } else {
-                console.error("Failed to create new entry or unexpected structure:", newEntry);
+                const errorMessage = `Failed to create new entry or unexpected structure: ${JSON.stringify(newEntry)}`;
+                console.error(errorMessage);
             }
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const errorMessage = `Error creating entry for ${currentUid}: ${error.message || error}`;
+            console.error(errorMessage);
+            setMiniTableData(prevSummary => [...prevSummary, errorMessage]);
         }
     }
+
+    let fetchLocalesAndLanguages = async (entryUid: string, contentTypeUid: EntryNode) => {
+        const sidebarWidget = getSidebarWidget();
+        if (!appSDK || !sidebarWidget) return [];
+
+        const locales = await appSDK.stack
+            .ContentType(contentTypeUid)
+            .Entry(entryUid)
+            .getLanguages();
+
+        return getLocalizedLanguages(locales.locales);
+    };
+
+    const getLocalizedLanguages = (languagesArray: any) => {
+        return languagesArray.filter((language: any) => language.localized).map((language: any) => language.code);
+    };
+
+    const localizeEntryLanguage = async (locale: string, newEntryUID: string, entryUid: string, contentType: string) => {
+        const oldEntry = await appSDK?.stack
+            .ContentType(contentType)
+            .Entry(entryUid)
+            .language(locale)
+            .fetch();
+
+        let entryData = transformEntryData(oldEntry.entry);
+        transformEntryReferenceUids(entryData);
+        let payload = {
+            entry: entryData
+        }
+        appSDK?.stack.ContentType(contentType).Entry(newEntryUID).update(payload, locale)
+    };
 
     /**
    * buildGraph will recursively build a node tree from the parent entry down to all its references. With each reference it finds, it will recurse down each tree and return them up
@@ -74,7 +130,7 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
    * @param nodeMap - this keeps track of all the nodes that have been created so far. This is to avoid creating duplicate nodes for the same entry during recursion
    * @returns 
    */
-    async function buildGraph(entry: any, nodeMap: Map<string, EntryNode> = new Map()): Promise<EntryNode> {
+    async function generateRootNode(entry: any, nodeMap: Map<string, EntryNode> = new Map()): Promise<EntryNode> {
         const node = new EntryNode();
         node.entry = entry;
         nodeMap.set(entry.uid, node);
@@ -84,7 +140,7 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
                 let referenceNode = nodeMap.get(reference.uid); // if reference already exists. Dont do a circle dependency.
                 if (!referenceNode) {
                     let referenceData = await appSDK?.stack.ContentType(reference._content_type_uid).Entry(reference.uid).fetch();
-                    referenceNode = await buildGraph(referenceData.entry, nodeMap);
+                    referenceNode = await generateRootNode(referenceData.entry, nodeMap);
                     referenceNode._content_type_uid = reference._content_type_uid;
                 }
                 referenceNode.visited = false;
@@ -98,13 +154,13 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
    * We have to manipulate the UID's of references, and certain fields to make use the payload for a create entry call.
    * @param entry - the entry to transform
    */
-    function transformEntryForCloneDeep(entry: any) {
+    function transformEntry(entry: any) {
         delete entry.uid;
-        transformEntryForClone(entry);
-        updateEntryReferenceUids(entry);
+        transformEntryData(entry);
+        transformEntryReferenceUids(entry);
     }
 
-    const transformEntryForClone = (entry: any) => {
+    const transformEntryData = (entry: any) => {
         // If the object contains the "file_uid" key, replace the object with its value
         if (entry.hasOwnProperty("file_size")) {
             return entry["uid"];
@@ -117,14 +173,14 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
 
         // Otherwise, recursively transform nested objects
         for (const key in entry) {
-            entry[key] = transformEntryForClone(entry[key]);
+            entry[key] = transformEntryData(entry[key]);
         }
 
-        entry.title = `${entry.title} (Copy) ${Date.now()}`;
+        entry.title = `[Cloned] - ${entry.title} ${Date.now()}`;
         return entry;
     };
 
-    function updateEntryReferenceUids(entry: any) {
+    function transformEntryReferenceUids(entry: any) {
         // Base case: if payload is not an object or array, return
         if (typeof entry !== 'object' || entry === null) return;
 
@@ -138,32 +194,10 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
         } else {
             // Otherwise, recursively traverse the object
             for (let key in entry) {
-                updateEntryReferenceUids(entry[key]);
+                transformEntryReferenceUids(entry[key]);
             }
         }
     }
-
-    const handleRequest = async () => {
-        setLoading(true);
-        await deepClone();
-        /*
-        const requestId = Date.now();
-
-        // Add a new request with a loading status
-        setRequests(prev => [...prev, { id: requestId, status: 'loading' }]);
-
-        // Simulate API request completion after a few seconds
-        setTimeout(() => {
-            setRequests(prev => {
-                return prev.map(request =>
-                    request.id === requestId ? { ...request, status: 'completed' } : request
-                );
-            });
-            setLoading(false);
-        }, Math.random() * 2000 + 1000);  // Random time between 1-3 seconds for variety
-        */
-       setLoading(false);
-    };
 
     /**
    * This just makes sure we don't have a circular dependency and crash anything. Possibly not needed.
@@ -189,39 +223,81 @@ const SelectModal : React.FC<ModalProps> = ({appSDK, contentTypeUID, modalProps}
         let references: any[] = [];
         // Base case: if payload is not an object or array, return
         if (typeof jsonField !== 'object' || jsonField === null) return references;
-    
+
         // If payload is an array with the expected structure
         if (Array.isArray(jsonField) && jsonField.length > 0 && jsonField[0].uid && jsonField[0]._content_type_uid) {
-          for (let item of jsonField) {
-            references.push(item);
-          }
+            for (let item of jsonField) {
+                references.push(item);
+            }
         } else {
-          // Otherwise, recursively traverse the object
-          for (let key in jsonField) {
-            references = [...references, ...getReferences(jsonField[key])];
-          }
+            // Otherwise, recursively traverse the object
+            for (let key in jsonField) {
+                references = [...references, ...getReferences(jsonField[key])];
+            }
         }
         return references;
-      }
-
+    }
 
     return (
         <>
-            <ModalHeader title={"Deep Clone"} closeModal={modalProps.closeModal} />
-            <ModalBody className="modalBodyCustomClass">
-                <div className="api-container">
-                    <Button icon="PublishWhite" onClick={handleRequest} isLoading={loading}>
-                        Start Clone
-                    </Button>
+            <ModalHeader title={"Entry Cloning"} closeModal={modalProps.closeModal} />
+            <ModalBody>
+                <h2 style={{ paddingBottom: 10}}> Settings </h2>
+                <Checkbox
+                    checked={language}
+                    label="All Languages"
+                    onClick={() => { setLanguage(!language) }}
+                />
+                <br />
+                <div>
+                    <>
+                        <FieldLabel htmlFor="stack-permissions">
+                            Cloned Items
+                        </FieldLabel>
+                        <MiniScrollableTable
+                            headerComponent={<>
+                                <div className="flex-v-center">
+                                    <FieldLabel htmlFor="ContentType">
+                                        Success
+                                    </FieldLabel>
+                                </div>
+                                <div className="flex-v-center" style={{ marginLeft: 20 }}>
+                                    <FieldLabel htmlFor="ContentType">
+                                        Content Type
+                                    </FieldLabel>
+                                </div>
+                                <div style={{ marginLeft: 20 }}>
+                                    <FieldLabel htmlFor="Title" >
+                                        Title
+                                    </FieldLabel>
+                                </div>
+                            </>}
+                            maxContentHeight="250px"
+                            rowComponent={miniTableData.map((item, index) => (
+                                <div key={index} className="flex-v-center mb-20">
+                                    <div key={index} className="flex-v-center mb-20">
+                                        <div style={{ "width": "90px" }}>
+                                            <Icon icon='SuccessInverted' width="small" />
+                                        </div>
+                                        <TextInput value={item.contentType} width="small" disabled />
+                                        <TextInput value={item.title} width="x-large" disabled />
+                                    </div>
+                                </div>
+                            ))}
+                            testId="cs-mini-scrollable-table"
+                            type="Primary"
+                            width="auto"
+                        />
+                        <Button icon="PublishWhite" onClick={deepClone} isLoading={loading} disabled={isCloned}>
+                            Start Clone
+                        </Button>
+                    </>
                 </div>
             </ModalBody>
             <ModalFooter>
                 <ButtonGroup>
                     <Button onClick={modalProps.closeModal} buttonType="light">
                         Cancel
-                    </Button>
-                    <Button onClick={modalProps.clone} icon="SaveWhite" >
-                        Clone
                     </Button>
                 </ButtonGroup>
             </ModalFooter>

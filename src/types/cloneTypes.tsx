@@ -24,6 +24,7 @@ export interface ModalProps {
     appSDK: AppSDK | null;
     contentTypeUID: string;
     modalProps: any;
+    config: any;
 }
 
 export interface Settings {
