@@ -47,7 +47,7 @@ This custom field is based on the [custom field location](https://github.com/nic
 #### Demo
 ![Dynamic URL](public/gifs/dynamic-url.gif)
 
-## Sidebar Widget for CMS
+## Entry Clone Sidebar Widget
 
 ### Overview
 This Sidebar Widget efficiently clones an existing entry and all its references, ensuring the newly created entries are interconnected and refer to the new cloned data. It simplifies the process of duplicating complex entries while maintaining data integrity and consistency. Note: This widget does not clone assets.
