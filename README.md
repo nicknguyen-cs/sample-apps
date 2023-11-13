@@ -24,7 +24,7 @@ This Sidebar Widget efficiently clones an existing entry and all its references,
 - **User-Friendly Interface**: Easy to use sidebar widget integrated into your CMS.
 - **Locale Cloning**: A checkbox for deep cloning with localized languages as well.
 
-## Usage
+### Usage
 1. Open the CMS and navigate to the entry you want to clone.
 2. Click on the Sidebar Widget in the entry screen.
 3. Select the "Clone Entry" button to open the modal.
@@ -44,18 +44,17 @@ The Check References Sidebar Widget is  designed for users who need to understan
 - **Sidebar Integration**: Conveniently located in the CMS sidebar for quick access.
 - **Enhanced Content Management**: Ideal for managing complex content structures and understanding content relationships.
 
-## Usage
+### Usage
 1. Open the CMS and navigate to an entry
 2. Open the Sidebar and there should be a data list present for you to overview
 
-#### Location
+### Location
 This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/blob/main/src/containers/SidebarReferencesWidget/EntrySidebar.tsx)
 
-#### Demo
+### Demo
 ![My Image](public/gifs/parent-references.gif)
 
-#### Install & Use Instructions
-
+### Install & Use Instructions
  - Install the app via Developer Hub and host it locally or with a provider
  - API Key and Management Token are needed to access the functionality and the app requires the config variables.
  - Open an entry, and locate the widgets section. Find what you named the app location and it should populate a list of all connected content.
@@ -71,13 +70,13 @@ This app allows users to reset any entry back to an empty slate, ideal for start
 - **Sidebar Integration**: Seamlessly integrated into the CMS sidebar for easy access.
 - **Ideal for Localization**: Perfect for starting new localizations or translations from scratch.
 
-## Usage
+### Usage
 1. Navigate to the entry locale you want to reset.
 2. In the sidebar, locate and click the "Reset Entry" button.
 3. Confirm the action if prompted.
 4. Refresh the page to view the entry reset to an empty state.
 
-#### Demo
+### Demo
 ![My Image](public/gifs/reset-locale.gif)
 
 ## Dynamic URL for Entry Custom Field
