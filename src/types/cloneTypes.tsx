@@ -17,7 +17,7 @@ export class EntryNode {
     visited: boolean = false; // for traversing
     inStack: boolean = false; // for cycle detection
     cloned: boolean = false; // for cloning
-    _content_type_uid: any; // used for entry creation
+    contentTypeUid: string = ""; // used for entry creation
 }
 
 export interface ModalProps {
@@ -31,4 +31,17 @@ export interface Settings {
     includeDeepClone: boolean;
     includeAllLanguages: boolean;
     includeAllReferences: boolean;
+}
+
+// Define the type for miniTableData somewhere in your types file
+export interface MiniTableDataType {
+    contentType: string;
+    title: string;
+    uid: string;
+    locales: string[];
+};
+
+export interface Reference {
+    _content_type_uid: string;
+    uid: string;
 }

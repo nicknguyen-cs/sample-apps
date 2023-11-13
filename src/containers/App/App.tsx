@@ -14,7 +14,7 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
 const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
-const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/CustomField"));
+const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
 const SideBarLanguages = React.lazy(() => import("../SidebarPublishedLanguages/EntrySidebar"));
 const SideBarResetEntryExtension = React.lazy(() => import("../SideBarResetEntry/SideBar"));
 const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
