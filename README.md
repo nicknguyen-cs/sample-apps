@@ -31,10 +31,22 @@ This Sidebar Widget efficiently clones an existing entry and all its references,
 4. Select if you would like to clone all locales as well, and click clone
 5. A table with every cloned entry and localization will show during process.
 
-## Check Parent References Sidebar Widget
+## Check References Sidebar Widget
 
 #### Description
-The check parent references sidebar widget that will show you all content that is associated with it. It will display how many levels of depth above the parent references are as well.
+
+### Overview
+The Check References Sidebar Widget is  designed for users who need to understand the relational structure of their content. This widget, accessible from the sidebar, displays all entries that are associated with the selected entry. It also indicates the depth levels of parent references, providing a clear view of how content is interconnected within your CMS.
+
+### Features
+- **Display Associated Entries**: Easily view all entries related to the selected one.
+- **Depth Level Indication**: Shows how many levels of depth the parent references have, offering insights into the content hierarchy.
+- **Sidebar Integration**: Conveniently located in the CMS sidebar for quick access.
+- **Enhanced Content Management**: Ideal for managing complex content structures and understanding content relationships.
+
+## Usage
+1. Open the CMS and navigate to an entry
+2. Open the Sidebar and there should be a data list present for you to overview
 
 #### Location
 This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/blob/main/src/containers/SidebarReferencesWidget/EntrySidebar.tsx)
