@@ -24,6 +24,12 @@ This Sidebar Widget efficiently clones an existing entry and all its references,
 - **User-Friendly Interface**: Easy to use sidebar widget integrated into your CMS.
 - **Locale Cloning**: A checkbox for deep cloning with localized languages as well.
 
+### Demo
+Coming soon...
+
+### Location
+This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/SideBarDeepClone)
+
 ### Usage
 1. Open the CMS and navigate to the entry you want to clone.
 2. Click on the Sidebar Widget in the entry screen.
@@ -32,8 +38,6 @@ This Sidebar Widget efficiently clones an existing entry and all its references,
 5. A table with every cloned entry and localization will show during process.
 
 ## Check References Sidebar Widget
-
-#### Description
 
 ### Overview
 The Check References Sidebar Widget is  designed for users who need to understand the relational structure of their content. This widget, accessible from the sidebar, displays all entries that are associated with the selected entry. It also indicates the depth levels of parent references, providing a clear view of how content is interconnected within your CMS.
@@ -44,15 +48,15 @@ The Check References Sidebar Widget is  designed for users who need to understan
 - **Sidebar Integration**: Conveniently located in the CMS sidebar for quick access.
 - **Enhanced Content Management**: Ideal for managing complex content structures and understanding content relationships.
 
+### Demo
+![My Image](public/gifs/parent-references.gif)
+
 ### Usage
 1. Open the CMS and navigate to an entry
 2. Open the Sidebar and there should be a data list present for you to overview
 
 ### Location
 This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/blob/main/src/containers/SidebarReferencesWidget/EntrySidebar.tsx)
-
-### Demo
-![My Image](public/gifs/parent-references.gif)
 
 ### Install & Use Instructions
  - Install the app via Developer Hub and host it locally or with a provider
@@ -70,19 +74,34 @@ This app allows users to reset any entry back to an empty slate, ideal for start
 - **Sidebar Integration**: Seamlessly integrated into the CMS sidebar for easy access.
 - **Ideal for Localization**: Perfect for starting new localizations or translations from scratch.
 
+### Demo
+![My Image](public/gifs/reset-locale.gif)
+
 ### Usage
 1. Navigate to the entry locale you want to reset.
 2. In the sidebar, locate and click the "Reset Entry" button.
 3. Confirm the action if prompted.
 4. Refresh the page to view the entry reset to an empty state.
 
-### Demo
-![My Image](public/gifs/reset-locale.gif)
+### Location
+This app is based on the [sidebar location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/SideBarResetEntry)
 
 ## Dynamic URL for Entry Custom Field
 
-This custom field is based on the [custom field location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/CustomFieldDynamicUrl). It will take the current locale and pre-pend it to a current url field. So if you're current URL field is "/category/jacket" it will convert it to "/{locale}/category/jacket". The logic can be fine tuned to match your folder structure if needed. 
+
+### Overview
+It will take the current locale and pre-pend it to a current url field. So if you're current URL field is "/category/jacket" it will convert it to "/{locale}/category/jacket". The logic can be fine tuned to match your folder structure if needed. 
+
+### Features
+- **Automatic URL creation**: User's don't have to worry about generating locale specific content
+- **Error Prevention**: This works after save, so it always looks the same, even if a user mistakenly changes the URL.
 
 #### Demo
 ![Dynamic URL](public/gifs/dynamic-url.gif)
+
+### Usage
+1. This will be a custom field that is read-only, no interaction needed by a user.
+
+### Location
+This custom field is based on the [custom field location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/CustomFieldDynamicUrl)
 
