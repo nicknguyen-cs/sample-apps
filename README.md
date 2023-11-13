@@ -47,18 +47,20 @@ This custom field is based on the [custom field location](https://github.com/nic
 #### Demo
 ![Dynamic URL](public/gifs/dynamic-url.gif)
 
-## RTE Embed with Metadata
+## Sidebar Widget for CMS
 
-Details coming soon...
+### Overview
+This Sidebar Widget efficiently clones an existing entry and all its references, ensuring the newly created entries are interconnected and refer to the new cloned data. It simplifies the process of duplicating complex entries while maintaining data integrity and consistency. Note: This widget does not clone assets.
 
-## Custom Select Option from an API Response
+### Features
+- **Clone Entry and References**: Quickly duplicates any entry along with its references.
+- **Relink Cloned Data**: Automatically updates links in the cloned data to point to the new entries.
+- **User-Friendly Interface**: Easy to use sidebar widget integrated into your CMS.
+- **Locale Cloning**: A checkbox for deep cloning with localized languages as well.
 
-Details coming soon...
-
-## Shallow Clone an Entry
-
-Details coming soon...
-
-## Deep Clone an Entry
-
-Details coming soon...
+## Usage
+1. Open the CMS and navigate to the entry you want to clone.
+2. Click on the Sidebar Widget in the entry screen.
+3. Select the "Clone Entry" button to open the modal.
+4. Select if you would like to clone all locales as well, and click clone
+5. A table with every cloned entry and localization will show during process.

@@ -41,6 +41,10 @@ const CloneModal: React.FC<ModalProps> = ({ appSDK, contentTypeUID, modalProps }
         console.log(parentNode);
     }
 
+    useEffect(() => {
+        getNodes();
+    });
+
     return (
         <>
             <ModalHeader title={"Entry Cloning"} closeModal={modalProps.closeModal} />
