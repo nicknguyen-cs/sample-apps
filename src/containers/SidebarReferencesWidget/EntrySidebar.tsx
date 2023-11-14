@@ -79,7 +79,11 @@ const EntrySidebarExtension = () => {
         <React.Fragment key={index}>
           {/* Render a heading if it's the first reference or if the depth has changed */}
           {(index === 0 || allReferences[index - 1].depth !== reference.depth) && (
-            <h2 style={{ "padding": "5px" }}>Depth {reference.depth + 1}</h2>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <h3 style={{ padding: "5px", margin: 0 }}>{reference.depth + 1} levels</h3>
+              <hr style={{ flexGrow: 1, height: "1px", backgroundColor: "black", border: "none", margin: 0 }} />
+            </div>
+
           )}
           <a
             style={{ textAlign: "left" }}
@@ -106,13 +110,8 @@ const EntrySidebarExtension = () => {
         <Icon icon="Reference" size="large" />
       </div>
       <HelpText>
-        <i>The following entries are connected to this entry.</i>
+        <i>The following list are connected to this entry.</i>
       </HelpText>
-      <select>
-        <option value="1">DEV</option>
-        <option value="2">QA</option>
-        <option value="3">Production</option>
-      </select>
       <hr />
       {VariationRow()}
     </div>
