@@ -1,10 +1,10 @@
 import { AppSDK, EntryNode, Reference } from "../../types/cloneTypes";
 
-export async function getParentNode(sdk: AppSDK | null, contentTypeUid: string) {
+export async function getParentNode(sdk: AppSDK | null, isCurrentEntryOnly: boolean, contentTypeUid: string) {
     if (sdk) {
         let baseEntry = await _fetchEntryData(sdk);
         let referenceUidSet: Map<string, EntryNode> = new Map();
-        let rootNode: any = await _buildParentNode(sdk, baseEntry.entry, referenceUidSet);
+        let rootNode: any = await _buildParentNode(sdk, baseEntry.entry, isCurrentEntryOnly, referenceUidSet);
         rootNode.contentTypeUid = contentTypeUid; // because the base node needs a uid for cloning, and its not provided, like the references are
         if (_hasCycle(rootNode)) {
             throw new Error("Circular dependency detected! Cannot clone.");
@@ -24,10 +24,9 @@ export async function cloneEntry(sdk: AppSDK | null, node: EntryNode, isCloningL
 
     const currentUid = node.entry.uid; // have to use this, because we remove uid for creating the entry.
     _transformEntry(node.entry, referenceUidMapping);
-    console.log(node)
     try {
         if (!referenceUidMapping.has(currentUid)) {
-            let newEntry = await sdk?.stack.ContentType(node.contentTypeUid).Entry.create({ "entryasdasdasd": node.entry });
+            let newEntry = await sdk?.stack.ContentType(node.contentTypeUid).Entry.create({ "entry": node.entry });
             if (newEntry && newEntry.entry && newEntry.entry.uid) {
                 referenceUidMapping.set(currentUid, newEntry.entry.uid);
                 if (isCloningLocales) {
@@ -69,11 +68,13 @@ function _hasCycle(node: EntryNode): boolean {
     }
 
     node.inStack = false;
+    node.visited = false;
     return false;
 }
 
-async function _buildParentNode(sdk: AppSDK, entry: any, nodeMap: Map<string, EntryNode>): Promise<EntryNode> {
+async function _buildParentNode(sdk: AppSDK, entry: any, isCurrentEntryOnly: boolean, nodeMap: Map<string, EntryNode>): Promise<EntryNode> {
     const node = _createNode(entry);
+    if (isCurrentEntryOnly) return node;
     await _addReferencesToNode(node, entry, sdk, nodeMap);
     return node;
 }
@@ -98,7 +99,7 @@ async function _addReferencesToNode(node: EntryNode, entry: any, sdk: AppSDK, no
 
 async function _fetchAndBuildNode(sdk: AppSDK, reference: any, nodeMap: Map<string, EntryNode>): Promise<EntryNode> {
     let referenceData = await sdk?.stack.ContentType(reference._content_type_uid).Entry(reference.uid).fetch();
-    let referenceNode = await _buildParentNode(sdk, referenceData.entry, nodeMap);
+    let referenceNode = await _buildParentNode(sdk, referenceData.entry, false, nodeMap);
     referenceNode.contentTypeUid = reference._content_type_uid;
     referenceNode.visited = false;
     return referenceNode;

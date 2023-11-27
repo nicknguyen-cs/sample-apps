@@ -15,11 +15,8 @@ const EntrySidebarExtension = () => {
       .then(async sdk => {
         setAppSDK(sdk);
         fetchReferences(sdk);
-        var customField = await sdk.location.CustomField;
-        var branch = await sdk.stack.getCurrentBranch();
-        console.log(branch)
       })
-      .catch(console.log);
+      .catch((error: any) => {});
 
   }, []);
 
@@ -77,13 +74,11 @@ const EntrySidebarExtension = () => {
     <div>
       {allReferences.map((reference, index) => (
         <React.Fragment key={index}>
-          {/* Render a heading if it's the first reference or if the depth has changed */}
           {(index === 0 || allReferences[index - 1].depth !== reference.depth) && (
             <div style={{ display: "flex", alignItems: "center" }}>
               <h3 style={{ padding: "5px", margin: 0 }}>{reference.depth + 1} levels</h3>
               <hr style={{ flexGrow: 1, height: "1px", backgroundColor: "black", border: "none", margin: 0 }} />
             </div>
-
           )}
           <a
             style={{ textAlign: "left" }}
@@ -99,9 +94,6 @@ const EntrySidebarExtension = () => {
         </React.Fragment>
       ))}
     </div>
-
-
-
   );
 
   return (

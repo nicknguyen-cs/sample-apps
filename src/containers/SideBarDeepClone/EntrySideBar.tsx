@@ -4,7 +4,8 @@ import { Button, HelpText, Icon, Checkbox, FieldLabel, cbModal, ToggleSwitch, As
 import Modal from "../../components/CloneComponents/CloneModal";
 import '@contentstack/venus-components/build/main.css';
 import './clone.css'
-import { AppSDK, Settings } from '../../types/cloneTypes';
+import { AppSDK, EntryNode, Settings } from '../../types/cloneTypes';
+import { getParentNode } from '../../services/clone/services';
 
 const EntrySidebarExtensionDeepClone: React.FC = () => {
   // State declarations
@@ -32,6 +33,9 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
       setInstallationData(installationData)
       setContentTypeUid(contentType.uid);
       setAppSDK(sdk);
+      let set = new Set<string>();
+      let parentNode = await getParentNode(sdk, true, contentType.uid);
+      generateList(parentNode, set);
     };
     initializeApp();
   }, []);
@@ -43,6 +47,17 @@ const EntrySidebarExtensionDeepClone: React.FC = () => {
         size: "max"
       }
     })
+  }
+
+  async function generateList(node: EntryNode, map: Set<string>) {
+    if (node.visited) return;
+    node.visited = true;
+
+    for (const neighbor of node.neighbors) {
+      map.add(neighbor.entry.uid)
+      generateList(neighbor, map)
+    }
+
   }
 
   return (
