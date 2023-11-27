@@ -14,6 +14,7 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
 const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
+const CustomFieldValidation = React.lazy(() => import("../CustomFieldValidation/CustomField"));
 const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
 const SideBarLanguages = React.lazy(() => import("../SidebarPublishedLanguages/EntrySidebar"));
 const SideBarResetEntryExtension = React.lazy(() => import("../SideBarResetEntry/SideBar"));
@@ -37,6 +38,16 @@ function App() {
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <CustomFieldExtension />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/custom-field-validation"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <CustomFieldValidation />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }

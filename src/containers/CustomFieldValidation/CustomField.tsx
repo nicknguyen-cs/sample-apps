@@ -1,0 +1,48 @@
+import Icon from '../images/sidebarwidget.svg';
+import { useEffect, useRef } from "react";
+import ContentstackAppSDK from "@contentstack/app-sdk";
+import { Button, ButtonGroup, cbModal, ModalBody, ModalFooter, ModalHeader, TextInput } from "@contentstack/venus-components";
+import "@contentstack/venus-components/build/main.css";
+import { ICustomField } from '@contentstack/app-sdk/dist/src/types';
+
+declare global {
+  interface Window {
+    iframeRef: any,
+    postRobot: any;
+  }
+}
+
+function EntrySidebarExtension() {
+
+  let customField: ICustomField | null;
+  let entry;
+
+  function checkValues (entry: any) {
+    if (entry.single_line > 10) {
+      customField?.field.setData("valid");
+    } else {
+      customField?.field.setData("");
+    }
+  }
+
+  useEffect(() => {
+    ContentstackAppSDK.init().then((sdk) => {
+      sdk?.location?.CustomField?.frame.updateHeight(100)
+      entry = sdk?.location?.CustomField?.entry;
+      customField = sdk?.location?.CustomField;
+      customField?.field.setData("");
+      entry.onSave((entry : any) => {
+        checkValues(entry);
+      })
+    })
+  }, []);
+
+  return (
+    <TextInput
+      disabled
+      type="text"
+    />
+  );
+};
+
+export default EntrySidebarExtension;
