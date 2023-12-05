@@ -18,7 +18,8 @@ function EntrySidebarExtension() {
   let entry;
 
   function checkValues (entry: any) {
-    if (entry.single_line > 10) {
+    let regex = new RegExp("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    if (regex.test(entry.single_line)) {
       customField?.field.setData("valid");
     } else {
       customField?.field.setData("");
