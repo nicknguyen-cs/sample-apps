@@ -16,6 +16,7 @@ const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField
 const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
 const CustomFieldValidation = React.lazy(() => import("../CustomFieldValidation/CustomField"));
 const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
+const SideBarTranslate = React.lazy(() => import("../SideBarTranslate/EntrySidebar"));
 const SideBarLanguages = React.lazy(() => import("../SidebarPublishedLanguages/EntrySidebar"));
 const SideBarResetEntryExtension = React.lazy(() => import("../SideBarResetEntry/SideBar"));
 const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
@@ -135,11 +136,21 @@ function App() {
             }
           />
           <Route
-            path="/entry-sidebar-languages"
+            path="/entry-sidebar-languages"sidebar-extension-translate
             element={
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <SideBarLanguages />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sidebar-extension-translate"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <SideBarTranslate />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }

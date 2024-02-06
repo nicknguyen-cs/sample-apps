@@ -28,6 +28,7 @@ function EntrySidebarExtension() {
 
   useEffect(() => {
     ContentstackAppSDK.init().then((sdk) => {
+      console.log("SDK: ", sdk);
       sdk?.location?.CustomField?.frame.updateHeight(100)
       entry = sdk?.location?.CustomField?.entry;
       customField = sdk?.location?.CustomField;
