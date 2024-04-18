@@ -157,9 +157,20 @@ function _transformEntryData(entry: any) {
         entry[key] = _transformEntryData(entry[key]);
     }
 
-    entry.title = `[Cloned] - ${entry.title} ${Date.now()}`;
+    entry.title = `[Cloned ${formatDate(Date.now())}]: ${entry.title}`;
     return entry;
 };
+
+function formatDate(date : any) {
+    const d = new Date(date);
+    const year = d.getFullYear().toString().slice(-2); // Get last two digits of year
+    const month = ('0' + (d.getMonth() + 1)).slice(-2); // Get month, convert to MM format
+    const day = ('0' + d.getDate()).slice(-2); // Get day, convert to DD format
+    const hour = ('0' + d.getHours()).slice(-2); // Get hours, convert to HH format
+    const minutes = ('0' + d.getMinutes()).slice(-2); // Get minutes, convert to MM format
+
+    return `${month}/${day}/${year} ${hour}:${minutes}`;
+}
 
 function _transformEntryReferenceUids(entry: any, referenceUidMapping: Map<string, EntryNode>) {
     // Base case: if payload is not an object or array, return

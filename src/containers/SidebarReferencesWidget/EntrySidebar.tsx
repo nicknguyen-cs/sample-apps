@@ -43,6 +43,7 @@ const EntrySidebarExtension = () => {
         const contentTypeUID = (await sidebarWidget?.entry.content_type).uid;
         let references = await fetchAllReferences(fieldData.uid, contentTypeUID, sdk);
         createHierarchy(references)
+        console.log(references);
         setTreeData(references)
       })
       .catch((error: any) => { });
