@@ -19,6 +19,7 @@ function EntrySidebarExtension() {
   function checkValues(entry: any, fields: string[]) {
     let isValid = false;  
     fields.forEach((field) => {
+      console.log(entry[field]);
       if (entry[field] !== null && entry[field] !== undefined) {
         console.log("Valid");
         isValid = true;  
