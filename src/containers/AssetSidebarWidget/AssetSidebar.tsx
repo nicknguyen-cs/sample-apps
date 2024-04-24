@@ -1,8 +1,14 @@
 import Icon from "../../assets/assetsidebar.svg";
 import localeTexts from "../../common/locales/en-us/index";
 import parse from "html-react-parser";
+import ContentstackAppSDK from "@contentstack/app-sdk";
 
 const AssetSidebarExtension = () => {
+  ContentstackAppSDK.init().then(async function (appSdk) {
+    console.log(appSdk.locationUID);
+    let loc = appSdk.location.AssetSidebarWidget?.currentAsset._metadata;
+    console.log(loc);
+  })
   return (
     <div className="asset-sidebar">
       <div className="asset-sidebar-container">
