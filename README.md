@@ -105,3 +105,21 @@ It will take the current locale and pre-pend it to a current url field. So if yo
 ### Location
 This custom field is based on the [custom field location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/CustomFieldDynamicUrl)
 
+
+## Custom Field Validation
+
+
+### Overview
+This uses a custom field with the required attribute. It checks other values in the entry and if they exist it fills the custom field with a valid message. Once saved and the validation passes, users can then publish an entry. 
+
+### Features
+- **Validation**: Custom validation to get around the current foundation of Contentstack
+npn
+#### Demo
+![Dynamic URL](public/gifs/custom-validation.gif)
+
+### Usage
+1. This will be a custom field that is read-only, no interaction needed by a user.
+
+### Location
+This custom field is based on the [custom field location](https://github.com/nicknguyen-cs/sample-apps/tree/main/src/containers/CustomFieldValidation)
