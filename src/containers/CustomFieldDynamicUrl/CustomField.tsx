@@ -15,14 +15,14 @@ const CustomFieldSelector: React.FC = () => {
 
       const locale = customField?.entry.getData().locale;
       const url = customField?.entry.getData().url;
-
+      const taxonomy = customField?.entry.getData().taxonomies;
+      console.log(taxonomy[0]);
       let e = customField?.entry.getData()
-      console.log(e.height)
 
       // Checks to see if the URL is already containing a locale code. This logic can be worked on for personal use case.
-      if (url && locale && url.indexOf(locale) !== 1) {
+      if (url && locale && url.indexOf(taxonomy[0].taxonomy_uid) !== 1) {
         console.log(e.height)
-        const newSlug = `/${locale}${url}bose/sandbox/environment?height=${e.height}`;
+        const newSlug = `/${taxonomy[0].taxonomy_uid}${url}`;
         customField?.entry.getField('url')?.setData(newSlug);
       }
     });

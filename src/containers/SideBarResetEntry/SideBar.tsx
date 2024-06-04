@@ -74,13 +74,13 @@ const EntrySidebarExtensionResetEntry: React.FC = () => {
 
     appSdk.stack.ContentType(contentTypeUid).Entry(entryUid).fetch().then((entry: any) => {
       const payload = emptyJsonValues(entry);
+      console.log(payload);
       appSdk
         .stack
         .ContentType(contentTypeUid)
         .Entry(entryUid)
         .fetch()
         .then((entry: any) => {
-          const payload = emptyJsonValues(entry);
           return appSdk.stack.ContentType(contentTypeUid).Entry(entryUid).update(payload, locale);
         })
         .then(() => {
