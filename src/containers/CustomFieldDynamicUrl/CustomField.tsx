@@ -21,7 +21,6 @@ const CustomFieldSelector: React.FC = () => {
 
       // Checks to see if the URL is already containing a locale code. This logic can be worked on for personal use case.
       if (url && locale && url.indexOf(taxonomy[0].term_uid) !== 1) {
-        console.log(e.height)
         const newSlug = `/${taxonomy[0].term_uid}${url}`;
         customField?.entry.getField('url')?.setData(newSlug);
       }
