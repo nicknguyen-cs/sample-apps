@@ -26,7 +26,8 @@ export async function cloneEntry(sdk: AppSDK | null, node: EntryNode, isCloningL
     _transformEntry(node.entry, referenceUidMapping);
     try {
         if (!referenceUidMapping.has(currentUid)) {
-            let newEntry = await sdk?.stack.ContentType(node.contentTypeUid).Entry.create({ "entry": node.entry });
+            let payload ={ "entry": node.entry };
+            let newEntry = await sdk?.stack.ContentType(node.contentTypeUid).Entry.create(payload);
             if (newEntry && newEntry.entry && newEntry.entry.uid) {
                 referenceUidMapping.set(currentUid, newEntry.entry.uid);
                 if (isCloningLocales) {
@@ -137,6 +138,7 @@ async function _cloneEntryLocales(sdk: AppSDK | null, currentUid: string, node: 
 
 function _transformEntry(entry: any, referenceUidMapping: Map<string, EntryNode>) {
     delete entry.uid;
+    entry.title = `[Cloned ${formatDate(Date.now())}]: ${entry.title}`;
     _transformEntryData(entry);
     _transformEntryReferenceUids(entry, referenceUidMapping);
 }
@@ -157,7 +159,6 @@ function _transformEntryData(entry: any) {
         entry[key] = _transformEntryData(entry[key]);
     }
 
-    entry.title = `[Cloned ${formatDate(Date.now())}]: ${entry.title}`;
     return entry;
 };
 
@@ -214,6 +215,7 @@ async function _localizeEntryLanguage(sdk: AppSDK | null, locale: string, newEnt
         .fetch();
 
     let entryData = _transformEntryData(oldEntry.entry);
+    entryData.title = `[Cloned ${formatDate(Date.now())}]: ${entryData.title}`;
     _transformEntryReferenceUids(entryData, referenceUidMapping);
     let payload = {
         entry: entryData

@@ -9,21 +9,26 @@ const CustomFieldSelector: React.FC = () => {
   useEffect(() => {
     ContentstackAppSDK.init().then((appSdk) => {
       const customField = appSdk?.location?.CustomField;
-
-      // Update custom field frame height to basically be least visible as possible.
       customField?.frame.updateHeight(0);
-
-      const locale = customField?.entry.getData().locale;
       const url = customField?.entry.getData().url;
-      const taxonomy = customField?.entry.getData().taxonomies;
-      console.log(taxonomy[0]);
-      let e = customField?.entry.getData()
+      let e = customField?.entry.getData();
 
-      // Checks to see if the URL is already containing a locale code. This logic can be worked on for personal use case.
-      if (url && locale && url.indexOf(taxonomy[0].term_uid) !== 1) {
-        const newSlug = `/${taxonomy[0].term_uid}${url}`;
-        customField?.entry.getField('url')?.setData(newSlug);
-      }
+      const newSlug = `${url}?origin=gcp&preview=x`;
+      customField?.entry.getField("url")?.setData(newSlug);
+
+      appSdk?.location?.CustomField?.entry.onSave(async () => {
+        let parsedUrl = customField?.entry.getData().url.replace(/\?.*$/, "");
+        let entryCustomField = customField?.entry;
+        entryCustomField.getField("url")?.setData(parsedUrl);
+        let entry = entryCustomField.getData();
+        entry.url = parsedUrl;
+        let payload = {
+            entry
+        };
+        console.log(payload);
+        await appSdk.stack.ContentType(entryCustomField.content_type.uid).Entry(entry.uid).update(payload).then().catch();
+        customField?.entry.getField("url")?.setData(newSlug);
+      });
     });
   }, []);
 

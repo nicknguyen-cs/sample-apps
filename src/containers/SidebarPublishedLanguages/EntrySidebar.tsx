@@ -35,13 +35,11 @@ function EntrySidebarExtension() {
       .ContentType(entry.content_type.uid)
       .Entry(entry._data.uid)
       .getLanguages();
-    
     fetchData(entry._data, locales.locales, config);
   };
 
   const fetchData = async (entry: Entry, locales: Locale[], config: any) => {
     const data = await createTableData(entry, locales, config);
-    console.log("Data: ", data)
     setTableData(data);
     setLoading(false);
     setCount(data.length);
@@ -50,6 +48,7 @@ function EntrySidebarExtension() {
   const createTableData = async (entry: Entry, locales: Locale[], config: any) => {
     if (!entry.publish_details) return [];
 
+    console.log(entry.publish_details);
     const tableDataPromises = entry.publish_details.map(async (data, index) => {
       setItemStatusMap(prevMap => {
         const updatedMap = [...prevMap];
@@ -57,6 +56,7 @@ function EntrySidebarExtension() {
         return updatedMap;
       });
 
+      console.log("Locales: " , locales, data.locale);
       const name = await getEnvironmentName(data, config);
       const matchingLocale = locales.find(locale => locale.code === data.locale);
       const icon = matchingLocale?.localized ? <Icon icon='SuccessInverted' /> : null;

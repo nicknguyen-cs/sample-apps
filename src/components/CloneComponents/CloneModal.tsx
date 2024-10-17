@@ -28,12 +28,13 @@ const CloneModal: React.FC<ModalProps> = ({ appSDK, contentTypeUID, modalProps }
         let referenceUidMapping = new Map<string, EntryNode>();
         let parentNode = await getParentNode(appSDK, isCurrentEntryOnly, contentTypeUID);
         try {
+            console.log(parentNode);
             await cloneEntry(appSDK, parentNode, isCloningLocales, referenceUidMapping, processMiniTableData);
         } catch (e: any) {
             setHasError(true);
             setErrorMessage(e.message);
         }
-        setIsCloned(true);
+        //setIsCloned(true);
         setIsLoading(false);
     }
 

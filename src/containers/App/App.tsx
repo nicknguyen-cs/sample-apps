@@ -13,6 +13,7 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  * improving the page load time
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
+const CustomFieldDisplay = React.lazy(() => import("../CustomFieldDisplay/CustomField"));
 const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
 const CustomFieldValidation = React.lazy(() => import("../CustomFieldValidation/CustomField"));
 const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
@@ -33,6 +34,16 @@ function App() {
       <MarketplaceAppProvider>
         <Routes>
           <Route path="/" element={<DefaultPage />} />
+          <Route
+            path="/custom-field-display"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <CustomFieldDisplay />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
           <Route
             path="/custom-field"
             element={
