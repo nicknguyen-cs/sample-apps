@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import { Button, cbModal } from "@contentstack/venus-components";
 import "@contentstack/venus-components/build/main.css";
-import SelectModal from "../../components/Modal";
+import SelectModal from "./AssetModal";
 import { set } from "lodash";
 
 declare global {
@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-function App() {
+function CustomFieldAssetSelector() {
   const ref = useRef(null);
   const [sdk, setSdk] = React.useState<any>(null);
   useEffect(() => {
@@ -48,4 +48,4 @@ function App() {
   );
 }
 
-export default App;
+export default CustomFieldAssetSelector;

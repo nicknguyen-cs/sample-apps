@@ -14,6 +14,7 @@ import FieldModifierExtension from "../FieldModifier/FieldModifier";
  */
 const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
 const CustomFieldDisplay = React.lazy(() => import("../CustomFieldDisplay/CustomField"));
+const CustomFieldAssetSelector = React.lazy(() => import("../CustomFieldAssetSelector/CustomField"));
 const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
 const CustomFieldValidation = React.lazy(() => import("../CustomFieldValidation/CustomField"));
 const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
@@ -40,6 +41,16 @@ function App() {
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <CustomFieldDisplay />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/custom-asset-selector"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <CustomFieldAssetSelector />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }
