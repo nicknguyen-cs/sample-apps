@@ -49,8 +49,11 @@ const SelectModal = (props: any) => {
   const addAssets = async (rows : any) => {
     const formattedData = createReferencePayload(rows.data);
     const entry =  await props.sdk.location.CustomField.entry;
-    const entryData = entry.getData();
-    await props.sdk.stack.ContentType(entry.content_type.uid).Entry(entryData.uid).update({ "entry" :  { "reference" : formattedData } });
+    console.log(formattedData);
+    await props.sdk.location.CustomField.field.setData(formattedData);
+    props.setReferences(formattedData);
+    //const entryData = entry.getData();
+    //await props.sdk.stack.ContentType(entry.content_type.uid).Entry(entryData.uid).update({ "entry" :  { "reference" : formattedData } });
     props.closeModal();
   }
 
@@ -59,6 +62,7 @@ const SelectModal = (props: any) => {
       return {
         uid: item.uid,
         _content_type_uid: "assets",
+        title: item.title,
       };
     });
   }
