@@ -52,8 +52,6 @@ const SelectModal = (props: any) => {
     console.log(formattedData);
     await props.sdk.location.CustomField.field.setData(formattedData);
     props.setReferences(formattedData);
-    //const entryData = entry.getData();
-    //await props.sdk.stack.ContentType(entry.content_type.uid).Entry(entryData.uid).update({ "entry" :  { "reference" : formattedData } });
     props.closeModal();
   }
 
