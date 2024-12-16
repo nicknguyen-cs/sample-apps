@@ -71,8 +71,8 @@ console.log("BRANCH DETAILS: ", branch_details);
 async function getEnvironments() {
   const response = await fetch(`https://api.contentstack.io/v3/environments`, {
     headers: {
-      'api_key': "blt8f285fdea6372037",
-      'authorization': "csb8bbb9b9bc5d4fb38849d066"
+      'api_key': "",
+      'authorization': ""
     }
   });
   const result = await response.json();

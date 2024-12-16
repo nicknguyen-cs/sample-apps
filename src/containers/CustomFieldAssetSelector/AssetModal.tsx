@@ -13,49 +13,49 @@ const SelectModal = (props: any) => {
 
   const contentType = "page";
   const assetContentType = "assets";
+  const apiKey = "";
+  const authorization = "";
 
-  async function getData() {
+  async function getData({searchText}: {searchText: string}) {
     // Fetch data from Contentstack
-    const url = "https://api.contentstack.io/v3/content_types/assets/entries";
+    const url = `https://api.contentstack.io/v3/content_types/assets/entries?query={"title": {"$regex" : "^${searchText}", "$options": "i"}}`;
     const data = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        api_key: "",
-        authorization: "",
+        api_key: apiKey,
+        authorization: authorization,
       },
     });
     return await data.json();
   }
 
-  async function fetchData() {
-    const data = await getData();
+  async function fetchData({searchText}: {searchText: string}) {
+    const data = await getData({ searchText });
     const tableData = data.entries.map((entry: any, index: number) => {
       itemStatusMap[index] = "loaded";
       return {
         url: entry.file.url,
-        title: entry.file.title,
+        title: entry.title,
         uid: entry.uid,
         index: index,
       };
     });
-    console.log(tableData);
+
     setTableData(tableData);
     setLoading(false);
     setCount(data.length);
   }
 
-
-  const addAssets = async (rows : any) => {
+  const addAssets = async (rows: any) => {
     const formattedData = createReferencePayload(rows.data);
-    const entry =  await props.sdk.location.CustomField.entry;
-    console.log(formattedData);
+    const entry = await props.sdk.location.CustomField.entry;
     await props.sdk.location.CustomField.field.setData(formattedData);
     props.setReferences(formattedData);
     props.closeModal();
-  }
+  };
 
-  function createReferencePayload(data : any) {
+  function createReferencePayload(data: any) {
     return data.map((item: any) => {
       return {
         uid: item.uid,
@@ -74,6 +74,8 @@ const SelectModal = (props: any) => {
           columnSelector
           isRowSelect
           viewSelector
+          searchPlaceholder={"Search"}
+          canSearch={true}
           itemSize={100}
           columns={[
             {
@@ -90,7 +92,7 @@ const SelectModal = (props: any) => {
               ),
             },
             {
-              Header: "Title",
+              Header: "Entry Title",
               id: "title",
               accessor: "title",
             },
@@ -106,13 +108,13 @@ const SelectModal = (props: any) => {
           itemStatusMap={itemStatusMap}
           loading={loading}
           totalCounts={count}
-          uniqueKey="url"
+          uniqueKey="uid"
           onRowSelectProp={[
             {
               cb: addAssets,
-              icon: 'SaveWhite',
-              label: 'Add Selected Asset',
-              showSelected: true
+              icon: "SaveWhite",
+              label: "Add Selected Asset",
+              showSelected: true,
             },
           ]}
         />
