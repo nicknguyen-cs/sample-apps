@@ -14,6 +14,7 @@ const EntrySidebar: React.FC = () => {
     const initializeApp = async () => {
       const sdk = await ContentstackAppSDK.init();
       const configData = await sdk.getConfig();
+      
       setConfigData(configData);
       setSdk(sdk);
     };
@@ -21,7 +22,19 @@ const EntrySidebar: React.FC = () => {
   }, []);
 
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    // Example function
+    // Example function where logic would take place for the API to approve content.
+    let entry = sdk?.location?.SidebarWidget?.entry;
+    let entryUid = entry._data.uid;
+    let contentType = entry.content_type.uid
+    console.log(entry.locale);
+    sdk?.stack.ContentType(contentType).Entry(entryUid).language(entry.locale).setWorkflowStage({ "workflow" : {
+      "workflow_stage" : {
+        "uid" : ""
+      }
+    }}).then((response: any) => {
+      console.log(response);
+    }
+    );
   };
 
   return (
