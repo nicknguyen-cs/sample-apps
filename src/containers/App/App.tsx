@@ -1,33 +1,41 @@
-import React, { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { MarketplaceAppProvider } from "../../common/providers/MarketplaceAppProvider";
 import { Route, Routes } from "react-router-dom";
+import { CustomFieldExtensionProvider } from "../../common/providers/CustomFieldExtensionProvider";
 import { EntrySidebarExtensionProvider } from "../../common/providers/EntrySidebarExtensionProvider";
 import { AppConfigurationExtensionProvider } from "../../common/providers/AppConfigurationExtensionProvider";
-import { CustomFieldExtensionProvider } from "../../common/providers/CustomFieldExtensionProvider";
-import FieldModifierExtension from "../FieldModifier/FieldModifier";
 
-/**
- * All the routes are Lazy loaded.
- * This will ensure the bundle contains only the core code and respective route bundle
- * improving the page load time
- */
-const CustomFieldExtension = React.lazy(() => import("../CustomField/CustomField"));
-const CustomFieldDisplay = React.lazy(() => import("../CustomFieldDisplay/CustomField"));
-const CustomFieldAssetSelector = React.lazy(() => import("../CustomFieldAssetSelector/CustomField"));
-const CustomFieldDynamicUrl = React.lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
-const CustomFieldValidation = React.lazy(() => import("../CustomFieldValidation/CustomField"));
-const SideBarDeepCloneExtension = React.lazy(() => import("../SideBarDeepClone/EntrySideBar"));
-const SideBarTranslate = React.lazy(() => import("../SideBarTranslate/EntrySidebar"));
-const SideBarLanguages = React.lazy(() => import("../SidebarPublishedLanguages/EntrySidebar"));
-const SideBarResetEntryExtension = React.lazy(() => import("../SideBarResetEntry/SideBar"));
-const EntrySidebarExtension = React.lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
-const AppConfigurationExtension = React.lazy(() => import("../ConfigScreen/AppConfiguration"));
-const AssetSidebarExtension = React.lazy(() => import("../AssetSidebarWidget/AssetSidebar"));
-const StackDashboardExtension = React.lazy(() => import("../DashboardWidget/StackDashboard"));
-const FullPageExtension = React.lazy(() => import("../FullPage/FullPage"));
-const PageNotFound = React.lazy(() => import("../404/404"));
-const DefaultPage = React.lazy(() => import("../index"));
+// Lazy-loaded components grouped by functionality
+const DefaultPage = lazy(() => import("../index"));
+
+// Custom Fields
+const CustomFieldDisplay = lazy(() => import("../CustomField/CustomField"));
+const CustomFieldAssetSelector = lazy(() => import("../CustomFieldAssetSelector/CustomField"));
+const CustomFieldValidation = lazy(() => import("../CustomFieldValidation/CustomField"));
+const CustomFieldDynamic = lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
+
+// Sidebar Extensions
+const SidebarDeepClone = lazy(() => import("../SideBarDeepClone/EntrySideBar"));
+const SidebarResetEntry = lazy(() => import("../SideBarResetEntry/SideBar"));
+const SidebarTranslate = lazy(() => import("../SideBarTranslate/EntrySidebar"));
+const SidebarBoilerplate = lazy(() => import("../SidebarBoilerplate/EntrySideBar"));
+const SidebarReferences = lazy(() => import("../SidebarReferencesWidget/EntrySidebar"));
+const SidebarPublishedLanguages = lazy(() => import("../SideBarTranslate/EntrySidebar"));
+const SidebarAsset = lazy(() => import("../AssetSidebarWidget/AssetSidebar"));
+
+// Dashboard
+const DashboardStack = lazy(() => import("../DashboardWidget/StackDashboard"));
+
+// Configurations
+const ConfigAppScreen = lazy(() => import("../ConfigScreen/AppConfiguration"));
+
+// Full Page
+const FullPageExtension = lazy(() => import("../FullPage/FullPage"));
+
+// Miscellaneous
+const NotFoundPage = lazy(() => import("../404/404"));
+const FieldModifier = lazy(() => import("../FieldModifier/FieldModifier"));
 
 function App() {
   return (
@@ -35,149 +43,36 @@ function App() {
       <MarketplaceAppProvider>
         <Routes>
           <Route path="/" element={<DefaultPage />} />
-          <Route
-            path="/custom-field-display"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <CustomFieldDisplay />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/custom-asset-selector"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <CustomFieldAssetSelector />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/custom-field"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <CustomFieldExtension />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/custom-field-validation"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <CustomFieldValidation />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/custom-field-dynamic-url"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <CustomFieldDynamicUrl />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/sidebar-extension-deep-clone"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <SideBarDeepCloneExtension />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/sidebar-extension-reset-entry"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <SideBarResetEntryExtension />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/entry-sidebar"
-            element={
-              <Suspense>
-                <EntrySidebarExtensionProvider>
-                  <EntrySidebarExtension />
-                </EntrySidebarExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/app-configuration"
-            element={
-              <Suspense>
-                <AppConfigurationExtensionProvider>
-                  <AppConfigurationExtension />
-                </AppConfigurationExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/asset-sidebar"
-            element={
-              <Suspense>
-                <AssetSidebarExtension />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/stack-dashboard"
-            element={
-              <Suspense>
-                <StackDashboardExtension />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/full-page"
-            element={
-              <Suspense>
-                <FullPageExtension />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/field-modifier"
-            element={
-              <Suspense>
-                <FieldModifierExtension />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/entry-sidebar-languages"sidebar-extension-translate
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <SideBarLanguages />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/sidebar-extension-translate"
-            element={
-              <Suspense>
-                <CustomFieldExtensionProvider>
-                  <SideBarTranslate />
-                </CustomFieldExtensionProvider>
-              </Suspense>
-            }
-          />
-          <Route path="*" element={<PageNotFound />} />
+
+          {/* Custom Fields */}
+          <Route path="/custom-field-display" element={<Suspense><CustomFieldExtensionProvider><CustomFieldDisplay /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/custom-field-asset-selector" element={<Suspense><CustomFieldExtensionProvider><CustomFieldAssetSelector /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/custom-field-validation" element={<Suspense><CustomFieldExtensionProvider><CustomFieldValidation /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/custom-field-dynamic" element={<Suspense><CustomFieldExtensionProvider><CustomFieldDynamic /></CustomFieldExtensionProvider></Suspense>} />
+
+          {/* Sidebars */}
+          <Route path="/sidebar-deep-clone" element={<Suspense><CustomFieldExtensionProvider><SidebarDeepClone /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/sidebar-reset-entry" element={<Suspense><CustomFieldExtensionProvider><SidebarResetEntry /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/sidebar-translate" element={<Suspense><CustomFieldExtensionProvider><SidebarTranslate /></CustomFieldExtensionProvider></Suspense>} />
+          <Route path="/sidebar-boilerplate" element={<Suspense><EntrySidebarExtensionProvider><SidebarBoilerplate /></EntrySidebarExtensionProvider></Suspense>} />
+          <Route path="/sidebar-references" element={<Suspense><EntrySidebarExtensionProvider><SidebarReferences /></EntrySidebarExtensionProvider></Suspense>} />
+          <Route path="/sidebar-published-languages" element={<Suspense><CustomFieldExtensionProvider><SidebarPublishedLanguages /></CustomFieldExtensionProvider></Suspense>} />
+
+          {/* Asset Sidebar */}
+          <Route path="/sidebar-asset" element={<Suspense><SidebarAsset /></Suspense>} />
+
+          {/* Dashboard */}
+          <Route path="/dashboard-stack" element={<Suspense><DashboardStack /></Suspense>} />
+
+          {/* Configuration Screen */}
+          <Route path="/app-config" element={<Suspense><AppConfigurationExtensionProvider><ConfigAppScreen /></AppConfigurationExtensionProvider></Suspense>} />
+
+          {/* Full Page */}
+          <Route path="/full-page" element={<Suspense><FullPageExtension /></Suspense>} />
+
+          {/* Miscellaneous */}
+          <Route path="/field-modifier" element={<Suspense><FieldModifier /></Suspense>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </MarketplaceAppProvider>
     </ErrorBoundary>

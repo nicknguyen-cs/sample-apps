@@ -64,7 +64,7 @@ const CloneModal: React.FC<ModalProps> = ({ appSDK, contentTypeUID, modalProps }
                     <MiniScrollableTable
                         headerComponent={<>
                             <div className="flex-v-center">
-                                <FieldLabel htmlFor="ContentType">
+                                <FieldLabel htmlFor="ContentType" version="v2">
                                     Success
                                 </FieldLabel>
                             </div>

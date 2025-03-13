@@ -13,11 +13,13 @@
     "@types/node": "^18.13.0",
     "@types/react": "^18.0.14",
     "@types/react-dom": "^18.0.5",
-    "axios": "^1.4.0",
+    "axios": "^1.7.9",
     "fetch": "^1.1.0",
     "form-data": "^4.0.0",
+    "fs-extra": "^11.3.0",
     "html-react-parser": "^3.0.8",
     "jsonfile": "^6.1.0",
+    "lru-cache": "^11.0.2",
     "node-fetch": "^3.3.1",
     "openai": "^4.24.1",
     "react": "^18.2.0",
@@ -67,6 +69,7 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.2.1",
+    "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.14.182",
     "@types/mixpanel-browser": "^2.38.0",
     "autoprefixer": "^10.4.7",
@@ -74,5 +77,8 @@
     "prettier": "^2.7.1",
     "react-test-renderer": "^18.2.0",
     "ts-node": "^10.8.2"
+  },
+  "overrides": {
+    "@types/react": "^18.0.14"
   }
 }

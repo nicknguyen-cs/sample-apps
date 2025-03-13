@@ -115,7 +115,7 @@ const EntrySidebarExtensionResetEntry: React.FC = () => {
         <div className="col-12 asset-sidebar-icon">
           <ButtonGroup>
             <Button icon="PublishWhite" onClick={resetEntry}>
-              Reset Entry
+              Approval!
             </Button>
           </ButtonGroup>
         </div>
