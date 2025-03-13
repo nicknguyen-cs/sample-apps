@@ -26,7 +26,6 @@ const EntrySidebar: React.FC = () => {
     let entry = sdk?.location?.SidebarWidget?.entry;
     let entryUid = entry._data.uid;
     let contentType = entry.content_type.uid
-    console.log(entry.locale);
     sdk?.stack.ContentType(contentType).Entry(entryUid).language(entry.locale).setWorkflowStage({ "workflow" : {
       "workflow_stage" : {
         "uid" : ""
