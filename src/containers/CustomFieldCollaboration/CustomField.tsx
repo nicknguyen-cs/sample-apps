@@ -1,10 +1,10 @@
 import "@contentstack/venus-components/build/main.css";
 import "./CustomField.css";
 import { useEffect, useRef, useState } from "react";
-import { FieldLabel, Field } from "@contentstack/venus-components";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import io from "socket.io-client";
-import debounce from "lodash.debounce"; // Install lodash.debounce for debouncing
+import type { Socket } from "socket.io-client";
+import debounce from "lodash.debounce";
 import lodash from "lodash";
 
 declare global {
@@ -15,7 +15,14 @@ declare global {
   }
 }
 
-const SOCKET_URL = "http://localhost:3001";
+interface ChangePayload {
+  [fieldUid: string]: {
+    value: any;
+    timestamp: number;
+  };
+}
+
+const SOCKET_URL = "https://0ca8-2600-1700-89c4-2e10-a1b8-b62f-4ca3-f3a7.ngrok-free.app";
 
 function CustomFieldCollaboration() {
   const [currentData, setCurrentData] = useState<any>({});
@@ -23,9 +30,16 @@ function CustomFieldCollaboration() {
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
   const [previousEntry, setPreviousEntry] = useState<any>({});
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
-  const pendingChangesRef = useRef<Record<string, any>>({}); // Track pending changes
-  const isProcessingRef = useRef(false); // Prevent overlapping processing
+
+  const socketRef = useRef<typeof Socket | null>(null);
+  const pendingChangesRef = useRef<Record<string, any>>({});
+  const lastUpdatedRef = useRef<Record<string, number>>({});
+  const suppressNextChangeForFields = useRef<Set<string>>(new Set());
+  const activelyEditingFields = useRef<Set<string>>(new Set());
+
+  const releaseEditingLock = debounce(() => {
+    activelyEditingFields.current.clear();
+  }, 1000);
 
   useEffect(() => {
     const initializeSDK = async () => {
@@ -34,48 +48,54 @@ function CustomFieldCollaboration() {
       appSDK?.location?.CustomField?.frame.updateHeight(100);
 
       setCurrentData(customFieldData);
-      setPreviousEntry(customFieldData); // Initialize previousEntry with the current state of the entry
+      setPreviousEntry(customFieldData);
       setSdk(appSDK);
 
-      const handleEntryChange = debounce(() => {
-        if (isProcessingRef.current) return; // Prevent overlapping processing
-        isProcessingRef.current = true;
+      const handleEmitChanges = debounce(() => {
+        const changesToEmit: ChangePayload = {};
+        const now = Date.now();
 
-        const changedFields = { ...pendingChangesRef.current };
-        pendingChangesRef.current = {}; // Clear pending changes after processing
+        Object.entries(pendingChangesRef.current).forEach(([field, value]) => {
+          changesToEmit[field] = {
+            value,
+            timestamp: now,
+          };
+          lastUpdatedRef.current[field] = now;
+        });
 
-        if (Object.keys(changedFields).length > 0) {
+        pendingChangesRef.current = {};
 
-          // Notify other users via WebSocket
+        if (Object.keys(changesToEmit).length > 0) {
+          console.log("📤 Emitting changes:", changesToEmit);
           socketRef.current?.emit("entryUpdated", {
-            entryId: customFieldData.uid,
-            changes: changedFields,
+            entryId: sdk.entry?.uid || customFieldData.uid,
+            changes: changesToEmit,
           });
-
-          // Update the previous entry state
-          setPreviousEntry((prev: any) => ({
-            ...prev,
-            ...changedFields,
-          }));
         }
-
-        isProcessingRef.current = false;
-      }, 500); // Debounce for 300ms
+      }, 200);
 
       appSDK?.location?.CustomField?.entry.onChange((updatedEntry: any) => {
-        // Compare fields to detect changes and batch them
-        pendingChangesRef.current = {};
+
         for (const field in updatedEntry) {
+          if (suppressNextChangeForFields.current.has(field)) {
+            suppressNextChangeForFields.current.delete(field);
+            continue;
+          }
+
+          activelyEditingFields.current.add(field);
+          releaseEditingLock();
+
           if (!lodash.isEqual(previousEntry[field], updatedEntry[field])) {
+            const now = Date.now();
             previousEntry[field] = updatedEntry[field];
             pendingChangesRef.current[field] = updatedEntry[field];
+            lastUpdatedRef.current[field] = now;
           }
         }
-        handleEntryChange(); // Trigger the debounced function
+
+        handleEmitChanges();
       });
     };
-
-    initializeSDK();
 
     const setupSocket = () => {
       socketRef.current = io(SOCKET_URL, {
@@ -89,18 +109,43 @@ function CustomFieldCollaboration() {
         socketRef.current?.emit("join", {
           entryId: currentData.uid,
           username: sdk?.currentUser?.first_name || "Anonymous",
+          clientId: sdk?.currentUser?.uid,
         });
       });
 
-      socketRef.current.on("entryUpdated", (changes: Record<string, any>) => {
-        Object.keys(changes).forEach((fieldUid) => {
-          sdk.location.CustomField.entry.getField(fieldUid).setData(changes[fieldUid]);
+      socketRef.current.on("entryUpdated", ({ changes }: { changes: ChangePayload }) => {
+
+        const validChanges: Record<string, any> = {};
+
+        Object.entries(changes).forEach(([fieldUid, { value, timestamp }]) => {
+          const localTimestamp = lastUpdatedRef.current[fieldUid] || 0;
+
+          if (activelyEditingFields.current.has(fieldUid)) {
+            return;
+          }
+
+          if (timestamp > localTimestamp) {
+            console.log(`✅ Applying field ${fieldUid}`);
+            validChanges[fieldUid] = value;
+            lastUpdatedRef.current[fieldUid] = timestamp;
+          } else {
+            console.log(`⛔ Skipped stale or duplicate for ${fieldUid}`);
+          }
         });
 
-        setCurrentData((prevData: any) => ({
-          ...prevData,
-          ...changes,
-        }));
+        if (Object.keys(validChanges).length > 0) {
+          Object.entries(validChanges).forEach(([fieldUid, value]) => {
+            suppressNextChangeForFields.current.add(fieldUid);
+            sdk.location.CustomField.entry.getField(fieldUid).setData(value);
+          });
+
+          setCurrentData((prev : any) => ({
+            ...prev,
+            ...validChanges,
+          }));
+        } else {
+          console.log("⚠️ No changes applied from server update.");
+        }
       });
 
       socketRef.current.on("updateUsers", (users: string[]) => {
@@ -113,12 +158,12 @@ function CustomFieldCollaboration() {
       });
     };
 
+    initializeSDK();
     setupSocket();
 
     return () => {
       socketRef.current?.disconnect();
     };
-    
   }, [currentData.uid]);
 
   return (
