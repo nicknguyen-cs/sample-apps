@@ -1,19 +1,10 @@
 import "@contentstack/venus-components/build/main.css";
 import "./CustomField.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import io from "socket.io-client";
-import type { Socket } from "socket.io-client";
 import debounce from "lodash.debounce";
 import lodash from "lodash";
-
-declare global {
-  interface Window {
-    iframeRef: any;
-    postRobot: any;
-    queryParams: any;
-  }
-}
 
 interface ChangePayload {
   [fieldUid: string]: {
@@ -23,90 +14,72 @@ interface ChangePayload {
 }
 
 const SOCKET_URL = "https://0ca8-2600-1700-89c4-2e10-a1b8-b62f-4ca3-f3a7.ngrok-free.app";
+const EDIT_LOCK_MS = 1500;
 
 function CustomFieldCollaboration() {
-  const [currentData, setCurrentData] = useState<any>({});
   const [sdk, setSdk] = useState<any>({});
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
-  const [previousEntry, setPreviousEntry] = useState<any>({});
+  const [user, setUser] = useState<any>({});
 
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
-  const pendingChangesRef = useRef<Record<string, any>>({});
-  const lastUpdatedRef = useRef<Record<string, number>>({});
-  const suppressNextChangeForFields = useRef<Set<string>>(new Set());
-  const activelyEditingFields = useRef<Set<string>>(new Set());
-
-  const releaseEditingLock = debounce(() => {
-    activelyEditingFields.current.clear();
-  }, 1000);
+  const socketRef = useRef<any>(null);
+  const lastValues = useRef<Record<string, any>>({});
+  const lastUpdated = useRef<Record<string, number>>({});
+  const suppressNextChange = useRef<Set<string>>(new Set());
+  const localEditTimestamps = useRef<Record<string, number>>({});
 
   const initContentstackSdk = async () => {
     const appSDK = await ContentstackAppSDK.init();
     const customField = appSDK.location?.CustomField;
+
+    setUser({
+      uid: appSDK.currentUser.uid,
+      name: `${appSDK.currentUser.first_name} ${appSDK.currentUser.last_name}`,
+    });
 
     if (!customField) {
       console.warn("🚫 Not running in a Custom Field location.");
       return null;
     }
 
-    const customFieldData = customField.entry.getData();
+    const data = customField.entry.getData();
+    lastValues.current = { ...data };
     customField.frame.updateHeight(100);
 
-    setCurrentData(customFieldData);
-    setPreviousEntry(customFieldData);
     setSdk(customField);
-
     return customField;
   };
 
   const setupFieldChangeListener = (customField: any) => {
-    const emitChanges = debounce(() => {
-      const now = Date.now();
-      const changesToEmit: ChangePayload = {};
-  
-      // Only emit the fields that changed in this cycle
-      Object.entries(pendingChangesRef.current).forEach(([field, value]) => {
-        changesToEmit[field] = { value, timestamp: now };
-        lastUpdatedRef.current[field] = now;
+    const emitChange = debounce((field: string, value: any) => {
+      const timestamp = Date.now();
+      socketRef.current?.emit("entryUpdated", {
+        entryId: customField.entry.getData().uid,
+        clientId: user.uid,
+        changes: {
+          [field]: { value, timestamp },
+        },
       });
-  
-      pendingChangesRef.current = {}; // clear after use
-  
-      if (Object.keys(changesToEmit).length > 0) {
-        socketRef.current?.emit("entryUpdated", {
-          entryId: customField.entry.getData().uid,
-          changes: changesToEmit,
-        });
-      }
-    }, 200);
-  
-    customField.entry.onChange((updatedEntry: any) => {
-      const localChanges: Record<string, any> = {};
-  
-      for (const field in updatedEntry) {
-        if (suppressNextChangeForFields.current.has(field)) {
-          suppressNextChangeForFields.current.delete(field);
+      lastUpdated.current[field] = timestamp;
+    }, 150);
+
+    customField.entry.onChange((entry: any) => {
+      const now = Date.now();
+
+      for (const field in entry) {
+        if (suppressNextChange.current.has(field)) {
+          suppressNextChange.current.delete(field);
           continue;
         }
-  
-        const isDifferent = !lodash.isEqual(previousEntry[field], updatedEntry[field]);
-        if (isDifferent) {
-          activelyEditingFields.current.add(field);
-          releaseEditingLock();
-  
-          previousEntry[field] = updatedEntry[field];
-          localChanges[field] = updatedEntry[field]; // ✅ Only truly changed fields
+
+        if (!lodash.isEqual(entry[field], lastValues.current[field])) {
+          lastValues.current[field] = entry[field];
+          localEditTimestamps.current[field] = now;
+          emitChange(field, entry[field]);
         }
       }
-  
-      // Merge localChanges into pendingChangesRef
-      Object.assign(pendingChangesRef.current, localChanges);
-  
-      emitChanges();
     });
   };
-  
 
   const setupSocket = () => {
     socketRef.current = io(SOCKET_URL, {
@@ -116,38 +89,29 @@ function CustomFieldCollaboration() {
 
     socketRef.current.on("connect", () => {
       setIsConnected(true);
-
       socketRef.current?.emit("join", {
-        entryId: currentData.uid,
-        username: sdk?.entry?.getData()?.uid || "Anonymous",
-        clientId: sdk?.entry?.getData()?.uid,
+        entryId: sdk?.entry?.getData()?.uid,
+        username: user.name || "Anonymous",
+        clientId: user.uid,
       });
     });
 
     socketRef.current.on("entryUpdated", ({ changes }: { changes: ChangePayload }) => {
-      const validChanges: Record<string, any> = {};
+      const now = Date.now();
 
-      Object.entries(changes).forEach(([fieldUid, { value, timestamp }]) => {
-        const localTimestamp = lastUpdatedRef.current[fieldUid] || 0;
+      console.log("Received changes", changes);
+      for (const field in changes) {
+        const { value, timestamp } = changes[field];
+        const localTime = lastUpdated.current[field] || 0;
+        const recentEdit = localEditTimestamps.current[field] || 0;
 
-        if (activelyEditingFields.current.has(fieldUid)) return;
+        if (now - recentEdit < EDIT_LOCK_MS) continue;
+        if (timestamp <= localTime) continue;
 
-        if (timestamp > localTimestamp) {
-          validChanges[fieldUid] = value;
-          lastUpdatedRef.current[fieldUid] = timestamp;
-        }
-      });
-
-      if (Object.keys(validChanges).length > 0) {
-        Object.entries(validChanges).forEach(([fieldUid, value]) => {
-          suppressNextChangeForFields.current.add(fieldUid);
-          sdk.entry.getField(fieldUid).setData(value);
-        });
-
-        setCurrentData((prev: any) => ({
-          ...prev,
-          ...validChanges,
-        }));
+        suppressNextChange.current.add(field);
+        sdk.entry.getField(field).setData(value);
+        lastValues.current[field] = value;
+        lastUpdated.current[field] = timestamp;
       }
     });
 
@@ -161,19 +125,16 @@ function CustomFieldCollaboration() {
   };
 
   useEffect(() => {
-    const initialize = async () => {
+    const init = async () => {
       const sdk = await initContentstackSdk();
       if (!sdk) return;
       setupFieldChangeListener(sdk);
       setupSocket();
     };
 
-    initialize();
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, [currentData.uid]);
+    init();
+    return () => socketRef.current?.disconnect();
+  }, []);
 
   return (
     <div className="custom-field-collaboration">
