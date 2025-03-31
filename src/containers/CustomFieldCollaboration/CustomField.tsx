@@ -64,14 +64,15 @@ function CustomFieldCollaboration() {
     const emitChanges = debounce(() => {
       const now = Date.now();
       const changesToEmit: ChangePayload = {};
-
+  
+      // Only emit the fields that changed in this cycle
       Object.entries(pendingChangesRef.current).forEach(([field, value]) => {
         changesToEmit[field] = { value, timestamp: now };
         lastUpdatedRef.current[field] = now;
       });
-
-      pendingChangesRef.current = {};
-
+  
+      pendingChangesRef.current = {}; // clear after use
+  
       if (Object.keys(changesToEmit).length > 0) {
         socketRef.current?.emit("entryUpdated", {
           entryId: customField.entry.getData().uid,
@@ -79,28 +80,33 @@ function CustomFieldCollaboration() {
         });
       }
     }, 200);
-
+  
     customField.entry.onChange((updatedEntry: any) => {
+      const localChanges: Record<string, any> = {};
+  
       for (const field in updatedEntry) {
         if (suppressNextChangeForFields.current.has(field)) {
           suppressNextChangeForFields.current.delete(field);
           continue;
         }
-
-        if (!lodash.isEqual(previousEntry[field], updatedEntry[field])) {
+  
+        const isDifferent = !lodash.isEqual(previousEntry[field], updatedEntry[field]);
+        if (isDifferent) {
           activelyEditingFields.current.add(field);
           releaseEditingLock();
-
-          const now = Date.now();
+  
           previousEntry[field] = updatedEntry[field];
-          pendingChangesRef.current[field] = updatedEntry[field];
-          lastUpdatedRef.current[field] = now;
+          localChanges[field] = updatedEntry[field]; // ✅ Only truly changed fields
         }
       }
-
+  
+      // Merge localChanges into pendingChangesRef
+      Object.assign(pendingChangesRef.current, localChanges);
+  
       emitChanges();
     });
   };
+  
 
   const setupSocket = () => {
     socketRef.current = io(SOCKET_URL, {
