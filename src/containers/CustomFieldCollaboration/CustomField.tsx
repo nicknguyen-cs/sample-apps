@@ -46,7 +46,7 @@ function CustomFieldCollaboration() {
     lastValues.current = { ...data };
     customField.frame.updateHeight(100);
 
-    setSdk(customField);
+    setSdk(appSDK); // Fix: Set sdk to appSDK
     return customField;
   };
 
@@ -81,7 +81,7 @@ function CustomFieldCollaboration() {
     });
   };
 
-  const setupSocket = () => {
+  const setupSocket = (sdk: any) => { // Accept sdk as a parameter
     socketRef.current = io(SOCKET_URL, {
       autoConnect: true,
       transports: ["websocket"],
@@ -90,7 +90,7 @@ function CustomFieldCollaboration() {
     socketRef.current.on("connect", () => {
       setIsConnected(true);
       socketRef.current?.emit("join", {
-        entryId: sdk?.entry?.getData()?.uid,
+        entryId: sdk?.entry?.getData()?.uid, // Use the passed sdk object
         username: user.name || "Anonymous",
         clientId: user.uid,
       });
@@ -109,13 +109,14 @@ function CustomFieldCollaboration() {
         if (timestamp <= localTime) continue;
 
         suppressNextChange.current.add(field);
-        sdk.entry.getField(field).setData(value);
+        sdk.entry.getField(field).setData(value); // Use the passed sdk object
         lastValues.current[field] = value;
         lastUpdated.current[field] = timestamp;
       }
     });
 
     socketRef.current.on("updateUsers", (users: string[]) => {
+      console.log("Connected users", users);
       setConnectedUsers(users);
     });
 
@@ -129,7 +130,7 @@ function CustomFieldCollaboration() {
       const sdk = await initContentstackSdk();
       if (!sdk) return;
       setupFieldChangeListener(sdk);
-      setupSocket();
+      setupSocket(sdk); // Pass sdk to setupSocket
     };
 
     init();
