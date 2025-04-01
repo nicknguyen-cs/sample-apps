@@ -1,160 +1,214 @@
 import "@contentstack/venus-components/build/main.css";
 import "./CustomField.css";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ContentstackAppSDK from "@contentstack/app-sdk";
 import io from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import debounce from "lodash.debounce";
 import lodash from "lodash";
 
+// Global types for window extensions
+declare global {
+  interface Window {
+    iframeRef: any;
+    postRobot: any;
+    queryParams: any;
+  }
+}
+
+// Define the structure for changes sent over the socket
 interface ChangePayload {
   [fieldUid: string]: {
-    value: any;
-    timestamp: number;
+    value: any
   };
 }
 
 const SOCKET_URL = "https://0ca8-2600-1700-89c4-2e10-a1b8-b62f-4ca3-f3a7.ngrok-free.app";
-const EDIT_LOCK_MS = 1500;
 
 function CustomFieldCollaboration() {
+  // React state for UI
+  const [currentData, setCurrentData] = useState<any>({});
+  const [user, setUser] = useState<any>({});
   const [sdk, setSdk] = useState<any>({});
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
-  const [user, setUser] = useState<any>({});
+  const [previousEntry, setPreviousEntry] = useState<any>({});
 
+  // Socket and collaboration refs
   const socketRef = useRef<any>(null);
-  const lastValues = useRef<Record<string, any>>({});
-  const lastUpdated = useRef<Record<string, number>>({});
-  const suppressNextChange = useRef<Set<string>>(new Set());
-  const localEditTimestamps = useRef<Record<string, number>>({});
+  const pendingChangesRef = useRef<Record<string, any>>({});
+  const suppressNextChangeForFields = useRef<Set<string>>(new Set());
+  const activelyEditingFields = useRef<Set<string>>(new Set());
+  const skipInitialLoad = useRef(true); // Flag to skip emitting changes on initial load
 
-  const initContentstackSdk = async () => {
+  useEffect(() => {
+    initializeSDK();
+  }, []);
+
+  useEffect(() => {
+    if (user?.uid && currentData?.uid) {
+      setupSocket();
+    }
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, [user.uid, currentData.uid]);
+
+  const initializeSDK = async () => {
     const appSDK = await ContentstackAppSDK.init();
     const customField = appSDK.location?.CustomField;
+
+    if (!customField) {
+      console.warn("🚫 Not running in a Custom Field location.");
+      return;
+    }
 
     setUser({
       uid: appSDK.currentUser.uid,
       name: `${appSDK.currentUser.first_name} ${appSDK.currentUser.last_name}`,
     });
 
-    if (!customField) {
-      console.warn("🚫 Not running in a Custom Field location.");
-      return null;
-    }
-
-    const data = customField.entry.getData();
-    lastValues.current = { ...data };
+    const customFieldData = customField.entry.getData();
     customField.frame.updateHeight(100);
 
-    setSdk(appSDK); // Fix: Set sdk to appSDK
-    return customField;
+    setCurrentData(customFieldData);
+    setPreviousEntry({ ...customFieldData }); // Initialize previousEntry with current data
+    setSdk(customField);
+
+    setupFieldChangeListener(customField);
+    skipInitialLoad.current = false; // Reset the flag after initial load
   };
 
   const setupFieldChangeListener = (customField: any) => {
-    const emitChange = debounce((field: string, value: any) => {
-      const timestamp = Date.now();
-      socketRef.current?.emit("entryUpdated", {
-        entryId: customField.entry.getData().uid,
-        clientId: user.uid,
-        changes: {
-          [field]: { value, timestamp },
-        },
-      });
-      lastUpdated.current[field] = timestamp;
-    }, 150);
 
-    customField.entry.onChange((entry: any) => {
-      const now = Date.now();
-
-      for (const field in entry) {
-        if (suppressNextChange.current.has(field)) {
-          suppressNextChange.current.delete(field);
-          continue;
-        }
-
-        if (!lodash.isEqual(entry[field], lastValues.current[field])) {
-          lastValues.current[field] = entry[field];
-          localEditTimestamps.current[field] = now;
-          emitChange(field, entry[field]);
-        }
-      }
+    customField.entry.onChange((updatedEntryPayload: {}) => {
+      handleFieldChanges(updatedEntryPayload, customField.entry.getData().uid);
     });
   };
 
-  const setupSocket = (sdk: any) => { // Accept sdk as a parameter
+  const handleFieldChanges = (updatedEntryPayload: any, entryUid : string) => {
+    if (skipInitialLoad.current) return; // Skip emitting changes during initial load
+
+    for (const field in updatedEntryPayload) {
+      if (suppressNextChangeForFields.current.has(field)) {
+        suppressNextChangeForFields.current.delete(field);
+        continue;
+      }
+
+      if (!lodash.isEqual(previousEntry[field], updatedEntryPayload[field])) {
+        activelyEditingFields.current.add(field);
+        releaseEditingLock();
+
+        previousEntry[field] = updatedEntryPayload[field];
+        pendingChangesRef.current[field] = updatedEntryPayload[field];
+        break;
+      }
+    }
+
+    emitChanges(entryUid);
+  };
+
+  const emitChanges = debounce((entryUid : string) => {
+    const changesToEmit: ChangePayload = {};
+
+    Object.entries(pendingChangesRef.current).forEach(([field, value]) => {
+      changesToEmit[field] = value;
+    });
+
+    pendingChangesRef.current = {};
+
+    if (Object.keys(changesToEmit).length > 0) {
+      socketRef.current?.emit("entryUpdated", {
+        entryId: entryUid,
+        changes: changesToEmit,
+      });
+    }
+  }, 200);
+
+  const releaseEditingLock = debounce(() => {
+    activelyEditingFields.current.clear();
+  }, 1000);
+
+  const setupSocket = () => {
     socketRef.current = io(SOCKET_URL, {
       autoConnect: true,
       transports: ["websocket"],
     });
 
     socketRef.current.on("connect", () => {
-      setIsConnected(true);
-      socketRef.current?.emit("join", {
-        entryId: sdk?.entry?.getData()?.uid, // Use the passed sdk object
-        username: user.name || "Anonymous",
-        clientId: user.uid,
-      });
+      handleSocketConnect(user, currentData);
     });
-
-    socketRef.current.on("entryUpdated", ({ changes }: { changes: ChangePayload }) => {
-      const now = Date.now();
-
-      console.log("Received changes", changes);
-      for (const field in changes) {
-        const { value, timestamp } = changes[field];
-        const localTime = lastUpdated.current[field] || 0;
-        const recentEdit = localEditTimestamps.current[field] || 0;
-
-        if (now - recentEdit < EDIT_LOCK_MS) continue;
-        if (timestamp <= localTime) continue;
-
-        suppressNextChange.current.add(field);
-        sdk.entry.getField(field).setData(value); // Use the passed sdk object
-        lastValues.current[field] = value;
-        lastUpdated.current[field] = timestamp;
-      }
-    });
-
-    socketRef.current.on("updateUsers", (users: string[]) => {
-      console.log("Connected users", users);
-      setConnectedUsers(users);
-    });
-
-    socketRef.current.on("disconnect", () => {
-      setIsConnected(false);
-    });
+    socketRef.current.on("entryUpdated", handleSocketEntryUpdate);
+    socketRef.current.on("updateUsers", setConnectedUsers);
+    socketRef.current.on("disconnect", () => setIsConnected(false));
   };
 
-  useEffect(() => {
-    const init = async () => {
-      const sdk = await initContentstackSdk();
-      if (!sdk) return;
-      setupFieldChangeListener(sdk);
-      setupSocket(sdk); // Pass sdk to setupSocket
-    };
+  const handleSocketConnect = (currentUser: { uid: string; name: string }, currentEntry: { uid: string }) => {
+    if (!currentUser?.uid || !currentEntry?.uid) return;
 
-    init();
-    return () => socketRef.current?.disconnect();
-  }, []);
+    socketRef.current?.emit("join", {
+      entryId: currentEntry.uid,
+      username: currentUser.name || "Anonymous",
+      clientId: currentUser.uid,
+    });
 
+    setIsConnected(true);
+  };
+
+  const handleSocketEntryUpdate = ({ changes }: { changes: Record<string, any> }) => {
+    const validChanges: Record<string, any> = {};
+    Object.entries(changes).forEach(([fieldUid, value]) => {
+      // Skip applying if user is actively editing
+      if (activelyEditingFields.current.has(fieldUid)) return;
+
+      validChanges[fieldUid] = value;
+    });
+
+    if (Object.keys(validChanges).length > 0) {
+      applyFieldChanges(validChanges);
+    }
+  };
+
+  const applyFieldChanges = (validChanges: Record<string, any>) => {
+    Object.entries(validChanges).forEach(([fieldUid, value]) => {
+      suppressNextChangeForFields.current.add(fieldUid);
+      sdk.entry.getField(fieldUid).setData(value);
+    });
+
+    setCurrentData((prev: any) => ({
+      ...prev,
+      ...validChanges,
+    }));
+  };
+
+  // Basic collaboration UI for status and connected users
   return (
     <div className="custom-field-collaboration">
-      <div className="connection-status">{isConnected ? "🟢 Connected" : "🔴 Connecting..."}</div>
-      <div className="connected-users">
-        {connectedUsers.length > 0 ? (
-          <div className="user-avatars">
-            {connectedUsers.map((user, index) => (
-              <span key={index} className="user-avatar" title={user}>
-                {user.charAt(0).toUpperCase()}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="no-users">No users connected</p>
-        )}
-      </div>
+      <ConnectionStatus isConnected={isConnected} />
+      <ConnectedUsers users={connectedUsers} />
     </div>
   );
 }
+
+const ConnectionStatus = ({ isConnected }: { isConnected: boolean }) => (
+  <div className="connection-status">{isConnected ? "🟢 Connected" : "🔴 Connecting..."}</div>
+);
+
+const ConnectedUsers = ({ users }: { users: string[] }) => (
+  <div className="connected-users">
+    {users.length > 0 ? (
+      <div className="user-avatars">
+        {users.map((user, index) => (
+          <span key={index} className="user-avatar" title={user}>
+            {user.charAt(0).toUpperCase()}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="no-users">No users connected</p>
+    )}
+  </div>
+);
 
 export default CustomFieldCollaboration;
