@@ -32,7 +32,7 @@ function CustomFieldCollaboration() {
   const [sdk, setSdk] = useState<any>({});
   const [isConnected, setIsConnected] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
-  const [previousEntry, setPreviousEntry] = useState<any>({});
+  const previousEntryRef = useRef<any>({}); // Replace useState with useRef
 
   // Socket and collaboration refs
   const socketRef = useRef<any>(null);
@@ -73,7 +73,7 @@ function CustomFieldCollaboration() {
     customField.frame.updateHeight(100);
 
     setCurrentData(customFieldData);
-    setPreviousEntry({ ...customFieldData }); // Initialize previousEntry with current data
+    previousEntryRef.current = { ...customFieldData }; // Update the ref directly
     setSdk(customField);
 
     setupFieldChangeListener(customField);
@@ -81,14 +81,15 @@ function CustomFieldCollaboration() {
   };
 
   const setupFieldChangeListener = (customField: any) => {
-
     customField.entry.onChange((updatedEntryPayload: {}) => {
       handleFieldChanges(updatedEntryPayload, customField.entry.getData().uid);
     });
   };
 
-  const handleFieldChanges = (updatedEntryPayload: any, entryUid : string) => {
+  const handleFieldChanges = (updatedEntryPayload: any, entryUid: string) => {
+    console.log("PREV: ", previousEntryRef.current);
     if (skipInitialLoad.current) return; // Skip emitting changes during initial load
+    if (Object.keys(previousEntryRef.current).length === 0) return; // Check if previousEntry is empty
 
     for (const field in updatedEntryPayload) {
       if (suppressNextChangeForFields.current.has(field)) {
@@ -96,17 +97,16 @@ function CustomFieldCollaboration() {
         continue;
       }
 
-      if (!lodash.isEqual(previousEntry[field], updatedEntryPayload[field])) {
+      if (!lodash.isEqual(previousEntryRef.current[field], updatedEntryPayload[field])) {
         activelyEditingFields.current.add(field);
         releaseEditingLock();
 
-        previousEntry[field] = updatedEntryPayload[field];
+        previousEntryRef.current[field] = updatedEntryPayload[field];
         pendingChangesRef.current[field] = updatedEntryPayload[field];
+        emitChanges(entryUid);
         break;
       }
     }
-
-    emitChanges(entryUid);
   };
 
   const emitChanges = debounce((entryUid : string) => {
