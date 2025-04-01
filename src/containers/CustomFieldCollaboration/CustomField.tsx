@@ -87,7 +87,6 @@ function CustomFieldCollaboration() {
   };
 
   const handleFieldChanges = (updatedEntryPayload: any, entryUid: string) => {
-    console.log("PREV: ", previousEntryRef.current);
     if (skipInitialLoad.current) return; // Skip emitting changes during initial load
     if (Object.keys(previousEntryRef.current).length === 0) return; // Check if previousEntry is empty
 
