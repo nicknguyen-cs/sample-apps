@@ -194,20 +194,44 @@ const ConnectionStatus = ({ isConnected }: { isConnected: boolean }) => (
   <div className="connection-status">{isConnected ? "🟢 Connected" : "🔴 Connecting..."}</div>
 );
 
-const ConnectedUsers = ({ users }: { users: string[] }) => (
-  <div className="connected-users">
-    {users.length > 0 ? (
-      <div className="user-avatars">
-        {users.map((user, index) => (
-          <span key={index} className="user-avatar" title={user}>
-            {user.charAt(0).toUpperCase()}
-          </span>
-        ))}
-      </div>
-    ) : (
-      <p className="no-users">No users connected</p>
-    )}
-  </div>
-);
+const ConnectedUsers = ({ users }: { users: string[] }) => {
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(" ");
+    return parts.length > 1
+      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      : parts[0][0].toUpperCase();
+  };
+
+  const getColor = (name: string) => {
+    const colors = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  return (
+    <div className="connected-users">
+      {users.length > 0 ? (
+        <div className="user-avatars">
+          {users.map((user, index) => (
+            <span
+              key={index}
+              className="user-avatar"
+              style={{ backgroundColor: getColor(user) }}
+              data-tooltip={user}
+            >
+              {getInitials(user)}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="no-users">No users connected</p>
+      )}
+    </div>
+  );
+};
+
 
 export default CustomFieldCollaboration;
