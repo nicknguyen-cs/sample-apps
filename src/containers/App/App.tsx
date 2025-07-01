@@ -14,6 +14,7 @@ const CustomFieldAssetSelector = lazy(() => import("../CustomFieldAssetSelector/
 const CustomFieldValidation = lazy(() => import("../CustomFieldValidation/CustomField"));
 const CustomFieldDynamic = lazy(() => import("../CustomFieldDynamicUrl/CustomField"));
 const CustomFieldCollaboration = lazy(() => import("../CustomFieldCollaboration/CustomField"));
+const CustomFieldEvents = lazy(() => import("../CustomFieldEvents/CustomField"));
 
 // Sidebar Extensions
 const SidebarDeepClone = lazy(() => import("../SideBarDeepClone/EntrySideBar"));
@@ -61,6 +62,16 @@ function App() {
               <Suspense>
                 <CustomFieldExtensionProvider>
                   <CustomFieldValidation />
+                </CustomFieldExtensionProvider>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/custom-field-events"
+            element={
+              <Suspense>
+                <CustomFieldExtensionProvider>
+                  <CustomFieldEvents />
                 </CustomFieldExtensionProvider>
               </Suspense>
             }
